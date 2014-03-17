@@ -7,7 +7,7 @@ class RossbyHaurwitzTestCase : BarotropicTestCase {
 protected:
     int R;          //>! wave number
     double omega;
-    double gh0;
+    double phi0;
 public:
     RossbyHaurwitzTestCase();
     virtual ~RossbyHaurwitzTestCase();

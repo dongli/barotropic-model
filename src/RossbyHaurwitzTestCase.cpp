@@ -3,7 +3,7 @@
 RossbyHaurwitzTestCase::RossbyHaurwitzTestCase() {
     R = 4;
     omega = 3.924e-6;
-    gh0 = G*8e3;
+    phi0 = G*8e3;
     REPORT_ONLINE;
 }
 
@@ -26,7 +26,7 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     TimeLevelIndex initTimeLevel;
     Field &u = model.getZonalWind();
     Field &v = model.getMeridionalWind();
-    Field &h = model.getGeopotentialHeight();
+    Field &gh = model.getGeopotentialHeight();
     double a = model.getDomain().getRadius();
     double R2 = R*R;
     double R_1 = R+1;
@@ -39,20 +39,20 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
         double cosLatR = pow(cosLat, R);
         double cosLatR2 = cosLatR*cosLatR;
         double A = (omega*OMEGA+0.5*omega2)*cosLat2+0.25*omega2*cosLatR2*(R_1*cosLat2+(2*R2-R-2)-2*R2/cosLat2);
-        double B = 2*omega*OMEGA+2*omega2*cosLatR*((R2+2*R+2)-R_1*R_1*cosLat2)/R_1*R_2;
+        double B = 2*(omega*OMEGA+omega2)*cosLatR*((R2+2*R+2)-R_1*R_1*cosLat2)/R_1/R_2;
         double C = 0.25*omega2*cosLatR2*(R_1*cosLat2-R_2);
         for (int i = 0; i < model.getMesh().getNumGrid(0, FULL); ++i) {
             double lon = model.getMesh().getGridCoordComp(0, FULL, i);
             double cosRLon = cos(R*lon);
             double sinRLon = sin(R*lon);
             double cos2RLon = cos(2*R*lon);
-            double u0, v0, h0;
-            u0 = a*omega*(cosLat+R*pow(sinLat, 2)*cosLatR/cosLat*cosRLon-cosLatR*cosLat*sinLat*cosRLon);
+            double u0, v0, gh0;
+            u0 = a*omega*(cosLat+R*pow(sinLat, 2)*cosLatR/cosLat*cosRLon-cosLatR*cosLat*cosRLon);
             v0 = -a*omega*R*cosLatR/cosLat*sinLat*sinRLon;
-            h0 = gh0+a*a*(A+B*cosRLon+C*cos2RLon);
+            gh0 = phi0+a*a*(A+B*cosRLon+C*cos2RLon);
             u(initTimeLevel, i, j) = u0;
             v(initTimeLevel, i, j) = v0;
-            h(initTimeLevel, i, j) = h0;
+            gh(initTimeLevel, i, j) = gh0;
         }
     }
     int js = 0, jn = model.getMesh().getNumGrid(1, FULL)-1;
@@ -61,10 +61,10 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
         u(initTimeLevel, i, jn) = 0.0;
         v(initTimeLevel, i, js) = 0.0;
         v(initTimeLevel, i, jn) = 0.0;
-        h(initTimeLevel, i, js) = gh0;
-        h(initTimeLevel, i, jn) = gh0;
+        gh(initTimeLevel, i, js) = phi0;
+        gh(initTimeLevel, i, jn) = phi0;
     }
     u.applyBndCond(initTimeLevel);
     v.applyBndCond(initTimeLevel);
-    h.applyBndCond(initTimeLevel);
+    gh.applyBndCond(initTimeLevel);
 }
