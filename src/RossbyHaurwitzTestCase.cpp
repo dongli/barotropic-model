@@ -47,7 +47,8 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
             double sinRLon = sin(R*lon);
             double cos2RLon = cos(2*R*lon);
             double u0, v0, gh0;
-            u0 = a*omega*(cosLat+R*pow(sinLat, 2)*cosLatR/cosLat*cosRLon-cosLatR*cosLat*cosRLon);
+            // Note: The computation order matters!!!
+            u0 = (cosLat+cosLatR/cosLat*sinLat*sinLat*cosRLon*R-cosLatR*cosLat*cosRLon)*a*omega;
             v0 = -a*omega*R*cosLatR/cosLat*sinLat*sinRLon;
             gh0 = phi0+a*a*(A+B*cosRLon+C*cos2RLon);
             u(initTimeLevel, i, j) = u0;

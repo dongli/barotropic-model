@@ -5,7 +5,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
 begin
 
     start_time = 0
-    end_time = 2
+    end_time = 11
     time_step = 1
     file_prefix = "output"
     file_root = "../build/Debug"
@@ -18,6 +18,9 @@ begin
     res_common = True
     res_common@gsnFrame = False
     res_common@gsnDraw = False
+    res_common@mpCenterLonF = 180
+    res_common@mpOutlineOn = False
+    res_common@gsnPolar = "NH"
     res_common@gsnSpreadColors = True
     res_common@cnFillOn = True
     res_common@cnLinesOn = False
@@ -29,20 +32,28 @@ begin
     res1@cnLevelSpacingF = 500
 
     res2 = res_common
+    res2@cnLevelSelectionMode = "ManualLevels"
+    res2@cnMinLevelValF = 0
+    res2@cnMaxLevelValF = 50
+    res2@cnLevelSpacingF = 5
 
     res3 = res_common
+    res3@cnLevelSelectionMode = "ManualLevels"
+    res3@cnMinLevelValF = -40
+    res3@cnMaxLevelValF = 40
+    res3@cnLevelSpacingF = 5
 
     res_panel = True
 
     do i = 0, dimsizes(fs)-1
-        system("echo time step: "+i)
+        system("echo time step "+i)
         f = addfile(fs(i), "r")
 
         plot1 = gsn_csm_contour_map(wks, f->gh(0,:,:), res1)
         plot2 = gsn_csm_contour_map(wks, f->u(0,:,:), res2)
         plot3 = gsn_csm_contour_map(wks, f->v(0,:,:), res3)
 
-        gsn_panel(wks, (/plot1,plot2,plot3/), (/3,1/), res_panel)
+        gsn_panel(wks, (/plot1,plot2,plot3/), (/2,2/), res_panel)
     end do
 
 end

@@ -76,25 +76,46 @@ void BarotropicModel::init(int numLon, int numLat) {
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         factorLat[j] = 1/(2*dlat*domain->getRadius()*cosLat[j]);
     }
+    // -------------------------------------------------------------------------
+    // set variables in Poles
+    for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
+        dut(i, js) = 0.0; dut(i, jn) = 0.0;
+        dvt(i, js) = 0.0; dvt(i, jn) = 0.0;
+        ghu(i, js) = 0.0; ghu(i, jn) = 0.0;
+        ghv(i, js) = 0.0; ghv(i, jn) = 0.0;
+    }
 }
 
 void BarotropicModel::run(TimeManager &timeManager) {
     dt = timeManager.getStepSize();
+    // -------------------------------------------------------------------------
+    // initialize IO manager
     io.init(timeManager);
     int fileIdx = io.registerOutputFile(*mesh, "output");
     io(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>({&u, &v, &gh});
-    
+    // -------------------------------------------------------------------------
+    // copy states
+    halfTimeIdx = oldTimeIdx+0.5;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
-        for (int i = -1; i < mesh->getNumGrid(0, FULL)-1; ++i) {
+        for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
+            u(halfTimeIdx, i, j) = u(oldTimeIdx, i, j);
+            v(halfTimeIdx, i, j) = v(oldTimeIdx, i, j);
+            gh(halfTimeIdx, i, j) = gh(oldTimeIdx, i, j);
             ght(oldTimeIdx, i, j) = sqrt(gh(oldTimeIdx, i, j));
+            ght(halfTimeIdx, i, j) = ght(oldTimeIdx, i, j);
             ut(oldTimeIdx, i, j) = u(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
+            ut(halfTimeIdx, i, j) = ut(oldTimeIdx, i, j);
             vt(oldTimeIdx, i, j) = v(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
+            vt(halfTimeIdx, i, j) = vt(oldTimeIdx, i, j);
         }
     }
-    
+    // -------------------------------------------------------------------------
+    // output initial condition
     io.create(fileIdx);
     io.output<double>(fileIdx, oldTimeIdx, {&u, &v, &gh});
     io.close(fileIdx);
+    // -------------------------------------------------------------------------
+    // main integration loop
     while (!timeManager.isFinished()) {
         integrate();
         timeManager.advance();
@@ -114,18 +135,9 @@ void BarotropicModel::integrate() {
     // get old total energy and mass
     double e0 = calcTotalEnergy(oldTimeIdx);
     double m0 = calcTotalMass(oldTimeIdx);
-    cout << setw(20) << setprecision(15) << e0 << setw(20) << setprecision(15) << m0 << endl;
-    // -------------------------------------------------------------------------
-    // copy state on old level into half level
-    for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
-        for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
-            u(halfTimeIdx, i, j) = u(oldTimeIdx, i, j);
-            v(halfTimeIdx, i, j) = v(oldTimeIdx, i, j);
-            gh(halfTimeIdx, i, j) = gh(oldTimeIdx, i, j);
-            ut(halfTimeIdx, i, j) = ut(oldTimeIdx, i, j);
-            vt(halfTimeIdx, i, j) = vt(oldTimeIdx, i, j);
-        }
-    }
+    cout << "iteration";
+    cout << std::fixed << setw(20) << setprecision(2) << e0 << "  ";
+    cout << setw(20) << setprecision(2) << m0 << endl;
     // -------------------------------------------------------------------------
     // run iterations
     int iter;
@@ -144,6 +156,7 @@ void BarotropicModel::integrate() {
         for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
             for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
                 ght(halfTimeIdx, i, j) = sqrt(gh(halfTimeIdx, i, j));
+                ght(newTimeIdx,  i, j) = sqrt(gh(newTimeIdx,  i, j));
             }
         }
         // ---------------------------------------------------------------------
@@ -161,20 +174,24 @@ void BarotropicModel::integrate() {
         // ---------------------------------------------------------------------
         // transform back velocity
         for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
-            for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
-                ght(newTimeIdx, i, j) = sqrt(gh(newTimeIdx, i, j));
+            for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
                 u(newTimeIdx, i, j) = ut(newTimeIdx, i, j)/ght(newTimeIdx, i, j);
                 v(newTimeIdx, i, j) = vt(newTimeIdx, i, j)/ght(newTimeIdx, i, j);
             }
         }
+        u.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
+        v.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         // get new total energy and mass
         double e1 = calcTotalEnergy(newTimeIdx);
         double m1 = calcTotalMass(newTimeIdx);
-        cout << setw(20) << setprecision(15) << e1 << setw(20) << setprecision(15) << m1 << endl;
         // TODO: Figure out how this early iteration abort works.
         if (fabs(e1-e0)*2/(e1+e0) < 5.0e-15) {
             break;
         }
+        cout << setw(9) << iter;
+        cout << std::fixed << setw(20) << setprecision(2) << e1 << "  ";
+        cout << setw(20) << setprecision(2) << m1;
+        cout << setw(20) << setprecision(16) << fabs(e1-e0)*2/(e1+e0) << endl;
     }
 }
 
@@ -201,16 +218,17 @@ double BarotropicModel::calcTotalMass(const TimeLevelIndex &timeIdx) const {
 }
 
 /**
- *  Input: u, v, gh
+ *  Input: ut, vt, ght
  *  Intermediate: ghu, ghv
  *  Output: dgh
  */
 void BarotropicModel::calcGeopotentialHeightTendency(const TimeLevelIndex &timeIdx) {
     // calculate intermediate variables
+    // Note: The results are different from computation using u, v, gh.
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
-            ghu(i, j) = u(timeIdx, i, j)*gh(timeIdx, i, j);
-            ghv(i, j) = v(timeIdx, i, j)*gh(timeIdx, i, j)*cosLat[j];
+            ghu(i, j) = ut(timeIdx, i, j)*ght(timeIdx, i, j);
+            ghv(i, j) = vt(timeIdx, i, j)*ght(timeIdx, i, j)*cosLat[j];
         }
     }
     // normal grids
@@ -263,7 +281,7 @@ void BarotropicModel::calcMeridionalWindTendency(const TimeLevelIndex &timeIdx) 
  */
 void BarotropicModel::calcZonalWindAdvection(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
-        for (int i = -1; i < mesh->getNumGrid(0, FULL)-1; ++i) {
+        for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
             fu(i, j) = ut(timeIdx, i, j)*u(timeIdx, i, j);
             fv(i, j) = ut(timeIdx, i, j)*v(timeIdx, i, j)*cosLat[j];
         }
@@ -286,7 +304,7 @@ void BarotropicModel::calcZonalWindAdvection(const TimeLevelIndex &timeIdx) {
  */
 void BarotropicModel::calcMeridionalWindAdvection(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
-        for (int i = -1; i < mesh->getNumGrid(0, FULL)-1; ++i) {
+        for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
             fu(i, j) = vt(timeIdx, i, j)*u(timeIdx, i, j);
             fv(i, j) = vt(timeIdx, i, j)*v(timeIdx, i, j)*cosLat[j];
         }

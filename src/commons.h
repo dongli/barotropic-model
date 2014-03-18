@@ -7,6 +7,7 @@ using geomtk::Time;
 using arma::vec;
 using std::cout;
 using std::endl;
+using std::fixed;
 using std::setw;
 using std::setprecision;
 
