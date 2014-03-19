@@ -1,9 +1,9 @@
-#include "BarotropicModel.h"
+#include "BarotropicModel_A_ImplicitMidpoint.h"
 #include "RossbyHaurwitzTestCase.h"
 
 int main(int argc, const char *argv[])
 {
-    BarotropicModel model;
+    BarotropicModel_A_ImplicitMidpoint model;
     RossbyHaurwitzTestCase testCase;
 
     TimeManager timeManager;

@@ -23,7 +23,8 @@ add_executable (run_model
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.cpp"
     "${PROJECT_SOURCE_DIR}/src/BarotropicModel.h"
-	"${PROJECT_SOURCE_DIR}/src/BarotropicModel.cpp"
+    "${PROJECT_SOURCE_DIR}/src/BarotropicModel_A_ImplicitMidpoint.h"
+	"${PROJECT_SOURCE_DIR}/src/BarotropicModel_A_ImplicitMidpoint.cpp"
 	"${PROJECT_SOURCE_DIR}/src/run_model.cpp"
 )
 target_link_libraries (run_model geomtk)

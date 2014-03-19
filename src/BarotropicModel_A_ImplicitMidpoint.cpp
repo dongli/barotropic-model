@@ -1,14 +1,14 @@
-#include "BarotropicModel.h"
+#include "BarotropicModel_A_ImplicitMidpoint.h"
 
-BarotropicModel::BarotropicModel() {
+BarotropicModel_A_ImplicitMidpoint::BarotropicModel_A_ImplicitMidpoint() {
     REPORT_ONLINE;
 }
 
-BarotropicModel::~BarotropicModel() {
+BarotropicModel_A_ImplicitMidpoint::~BarotropicModel_A_ImplicitMidpoint() {
     REPORT_OFFLINE;
 }
 
-void BarotropicModel::init(int numLon, int numLat) {
+void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
     // -------------------------------------------------------------------------
     // initialize domain
     domain = new Domain(2);
@@ -86,7 +86,7 @@ void BarotropicModel::init(int numLon, int numLat) {
     }
 }
 
-void BarotropicModel::run(TimeManager &timeManager) {
+void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     dt = timeManager.getStepSize();
     // -------------------------------------------------------------------------
     // initialize IO manager
@@ -126,7 +126,7 @@ void BarotropicModel::run(TimeManager &timeManager) {
     }
 }
 
-void BarotropicModel::integrate() {
+void BarotropicModel_A_ImplicitMidpoint::integrate() {
     // -------------------------------------------------------------------------
     // set time level indices
     halfTimeIdx = oldTimeIdx+0.5;
@@ -135,8 +135,12 @@ void BarotropicModel::integrate() {
     // get old total energy and mass
     double e0 = calcTotalEnergy(oldTimeIdx);
     double m0 = calcTotalMass(oldTimeIdx);
-    cout << "iteration";
+#ifdef DEBUG
+    cout << "iteration ";
+#endif
+    cout << "energy: ";
     cout << std::fixed << setw(20) << setprecision(2) << e0 << "  ";
+    cout << "mass: ";
     cout << setw(20) << setprecision(2) << m0 << endl;
     // -------------------------------------------------------------------------
     // run iterations
@@ -183,19 +187,24 @@ void BarotropicModel::integrate() {
         v.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         // get new total energy and mass
         double e1 = calcTotalEnergy(newTimeIdx);
-        double m1 = calcTotalMass(newTimeIdx);
         // TODO: Figure out how this early iteration abortion works.
         if (fabs(e1-e0)*2/(e1+e0) < 5.0e-15) {
             break;
         }
+#ifdef DEBUG
+        double m1 = calcTotalMass(newTimeIdx);
         cout << setw(9) << iter;
+        cout << " energy: ";
         cout << std::fixed << setw(20) << setprecision(2) << e1 << "  ";
-        cout << setw(20) << setprecision(2) << m1;
+        cout << "mass: ";
+        cout << setw(20) << setprecision(2) << m1 << " ";
+        cout << "energy bias: ";
         cout << setw(20) << setprecision(16) << fabs(e1-e0)*2/(e1+e0) << endl;
+#endif
     }
 }
 
-double BarotropicModel::calcTotalEnergy(const TimeLevelIndex &timeIdx) const {
+double BarotropicModel_A_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex &timeIdx) const {
     double totalEnergy = 0.0;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
@@ -207,7 +216,7 @@ double BarotropicModel::calcTotalEnergy(const TimeLevelIndex &timeIdx) const {
     return totalEnergy;
 }
 
-double BarotropicModel::calcTotalMass(const TimeLevelIndex &timeIdx) const {
+double BarotropicModel_A_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &timeIdx) const {
     double totalMass = 0.0;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
@@ -222,7 +231,7 @@ double BarotropicModel::calcTotalMass(const TimeLevelIndex &timeIdx) const {
  *  Intermediate: ghu, ghv
  *  Output: dgh
  */
-void BarotropicModel::calcGeopotentialHeightTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialHeightTendency(const TimeLevelIndex &timeIdx) {
     // calculate intermediate variables
     // Note: The results are different from computation using u, v, gh.
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
@@ -263,13 +272,13 @@ void BarotropicModel::calcGeopotentialHeightTendency(const TimeLevelIndex &timeI
     assert(fabs(tmp) < 1.0e-10);
 }
 
-void BarotropicModel::calcZonalWindTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcZonalWindTendency(const TimeLevelIndex &timeIdx) {
     calcZonalWindAdvection(timeIdx);
     calcZonalWindCoriolis(timeIdx);
     calcZonalWindPressureGradient(timeIdx);
 }
 
-void BarotropicModel::calcMeridionalWindTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindTendency(const TimeLevelIndex &timeIdx) {
     calcMeridionalWindAdvection(timeIdx);
     calcMeridionalWindCoriolis(timeIdx);
     calcMeridionalWindPressureGradient(timeIdx);
@@ -279,7 +288,7 @@ void BarotropicModel::calcMeridionalWindTendency(const TimeLevelIndex &timeIdx) 
  *  Input: u, v, ut
  *  Output, s1
  */
-void BarotropicModel::calcZonalWindAdvection(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcZonalWindAdvection(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
             fu(i, j) = ut(timeIdx, i, j)*u(timeIdx, i, j);
@@ -302,7 +311,7 @@ void BarotropicModel::calcZonalWindAdvection(const TimeLevelIndex &timeIdx) {
  *  Input: u, v, vt
  *  Output, dvt
  */
-void BarotropicModel::calcMeridionalWindAdvection(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindAdvection(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
             fu(i, j) = vt(timeIdx, i, j)*u(timeIdx, i, j);
@@ -325,7 +334,7 @@ void BarotropicModel::calcMeridionalWindAdvection(const TimeLevelIndex &timeIdx)
  *  Input: u, vt
  *  Output: dut
  */
-void BarotropicModel::calcZonalWindCoriolis(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcZonalWindCoriolis(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
             double f = factorCor[j]+u(timeIdx, i, j)*factorCur[j];
@@ -338,7 +347,7 @@ void BarotropicModel::calcZonalWindCoriolis(const TimeLevelIndex &timeIdx) {
  *  Input: u, ut
  *  Output: dvt
  */
-void BarotropicModel::calcMeridionalWindCoriolis(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindCoriolis(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
             double f = factorCor[j]+u(timeIdx, i, j)*factorCur[j];
@@ -351,7 +360,7 @@ void BarotropicModel::calcMeridionalWindCoriolis(const TimeLevelIndex &timeIdx) 
  *  Input: gh, ght
  *  Output: dut
  */
-void BarotropicModel::calcZonalWindPressureGradient(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcZonalWindPressureGradient(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
             dut(i, j) += (gh(timeIdx, i+1, j)-gh(timeIdx, i-1, j))*
@@ -364,7 +373,7 @@ void BarotropicModel::calcZonalWindPressureGradient(const TimeLevelIndex &timeId
  *  Input: gh, ght
  *  Output: dvt
  */
-void BarotropicModel::calcMeridionalWindPressureGradient(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindPressureGradient(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
             dvt(i, j) += (gh(timeIdx, i, j+1)-gh(timeIdx, i, j-1))*
