@@ -91,8 +91,8 @@ void BarotropicModel::run(TimeManager &timeManager) {
     // -------------------------------------------------------------------------
     // initialize IO manager
     io.init(timeManager);
-    int fileIdx = io.registerOutputFile(*mesh, "output");
-    io(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>({&u, &v, &gh});
+    int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::DAYS, 0.5);
+    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>({&u, &v, &gh});
     // -------------------------------------------------------------------------
     // copy states
     halfTimeIdx = oldTimeIdx+0.5;
@@ -184,7 +184,7 @@ void BarotropicModel::integrate() {
         // get new total energy and mass
         double e1 = calcTotalEnergy(newTimeIdx);
         double m1 = calcTotalMass(newTimeIdx);
-        // TODO: Figure out how this early iteration abort works.
+        // TODO: Figure out how this early iteration abortion works.
         if (fabs(e1-e0)*2/(e1+e0) < 5.0e-15) {
             break;
         }

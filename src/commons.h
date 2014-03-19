@@ -4,6 +4,7 @@ using geomtk::PI2;
 using geomtk::RAD;
 using geomtk::TimeManager;
 using geomtk::Time;
+using geomtk::IOFrequencyUnit;
 using arma::vec;
 using std::cout;
 using std::endl;
@@ -15,6 +16,8 @@ const int FULL = geomtk::RLLStagger::GridType::FULL;
 const int HALF = geomtk::RLLStagger::GridType::HALF;
 const int CENTER = geomtk::RLLStagger::Location::CENTER;
 const int FULL_DIMENSION = geomtk::RLLSpaceDimensions::FULL_DIMENSION;
+const double MINUTES = geomtk::TimeUnit::MINUTES;
+const double DAYS = geomtk::TimeUnit::DAYS;
 
 #define Domain geomtk::SphereDomain
 #define Mesh geomtk::RLLMesh

@@ -17,13 +17,13 @@ link_directories (
 
 # ------------------------------------------------------------------------------
 # executable targets
-add_executable (main.exe
+add_executable (run_model
     "${PROJECT_SOURCE_DIR}/src/commons.h"
     "${PROJECT_SOURCE_DIR}/src/BarotropicTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.cpp"
     "${PROJECT_SOURCE_DIR}/src/BarotropicModel.h"
 	"${PROJECT_SOURCE_DIR}/src/BarotropicModel.cpp"
-	"${PROJECT_SOURCE_DIR}/src/main.cpp"
+	"${PROJECT_SOURCE_DIR}/src/run_model.cpp"
 )
-target_link_libraries (main.exe geomtk)
+target_link_libraries (run_model geomtk)
