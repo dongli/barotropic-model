@@ -11,7 +11,7 @@
  */
 class BarotropicModel_A_ImplicitMidpoint : public BarotropicModel {
 protected:
-    SingleLevelField ghu, ghv, fu, fv;
+    SingleLevelField fu, fv;
 
     double dlon, dlat;
     vec cosLat, tanLat;
