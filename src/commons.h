@@ -21,8 +21,8 @@ const double DAYS = geomtk::TimeUnit::DAYS;
 
 #define Domain geomtk::SphereDomain
 #define Mesh geomtk::RLLMesh
-#define Field geomtk::RLLField<double, 2>
-#define SingleLevelField geomtk::RLLField<double, 1>
+#define Field geomtk::NumericRLLField<double, 2>
+#define SingleLevelField geomtk::NumericRLLField<double, 1>
 #define TimeLevelIndex geomtk::TimeLevelIndex<2>
 #define IOManager geomtk::IOManager<geomtk::RLLDataFile>
 
