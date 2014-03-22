@@ -23,7 +23,7 @@ void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
     // create variables
     u.create("u", "m s-1", "zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
-    gh.create("gh", "m", "geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
+    gh.create("gh", "m2 s-2", "geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
 
     ut.create("ut", "(m s-1)*m-2", "transformed zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     vt.create("vt", "(m s-1)*m-2", "transformed meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
@@ -112,7 +112,7 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
-    io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
+    io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
     io.close(fileIdx);
     // -------------------------------------------------------------------------
     // main integration loop
@@ -121,7 +121,7 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
         timeManager.advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
-        io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
+        io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
         io.close(fileIdx);
     }
 }

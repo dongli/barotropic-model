@@ -49,11 +49,11 @@ void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
     // initialize IO manager
     io.init(timeManager);
     int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::DAYS, 0.5);
-    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>({&u, &v, &gh});
+    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gh);
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
-    io.output<double>(fileIdx, oldTimeIdx, {&u, &v, &gh});
+    io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
     io.close(fileIdx);
     // -------------------------------------------------------------------------
     // main integration loop
@@ -62,7 +62,7 @@ void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
         timeManager.advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
-        io.output<double>(fileIdx, oldTimeIdx, {&u, &v, &gh});
+        io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
         io.close(fileIdx);
     }
 }
