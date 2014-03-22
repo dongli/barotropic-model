@@ -37,7 +37,7 @@ private:
 
     double calcTotalMass(const TimeLevelIndex &timeIdx) const;
 
-    void calcGeopotentialHeightTendency(const TimeLevelIndex &timeIdx);
+    void calcGeopotentialDepthTendency(const TimeLevelIndex &timeIdx);
 
     void calcZonalWindTendency(const TimeLevelIndex &timeIdx);
 

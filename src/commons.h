@@ -28,6 +28,7 @@ const double DAYS = geomtk::TimeUnit::DAYS;
 #define SingleLevelField geomtk::NumericRLLField<double, 1>
 #define TimeLevelIndex geomtk::TimeLevelIndex<2>
 #define IOManager geomtk::IOManager<geomtk::RLLDataFile>
+#define SpaceCoord geomtk::SphereCoord
 
 const double OMEGA = 7.292e-5;
 const double G = 9.8;

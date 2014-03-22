@@ -27,7 +27,8 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     const Mesh &mesh = model.getMesh();
     Field &u = model.getZonalWind();
     Field &v = model.getMeridionalWind();
-    Field &gh = model.getGeopotentialHeight();
+    Field &gd = model.getGeopotentialDepth();
+    SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
     double Re = model.getDomain().getRadius();
     double R2 = R*R;
     double R_1 = R+1;
@@ -67,10 +68,10 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
             v(initTimeLevel, i, j) = -Re*omega*R*cosLatR/cosLat*sinLat*sinRLon;
         }
     }
-    // -------------------------------------------------------------------------
-    // geopotential height
-    assert(gh.getGridType(0) == FULL);
-    assert(gh.getGridType(1) == FULL);
+        // -------------------------------------------------------------------------
+        // surface geopotential height and geopotential depth
+    assert(gd.getGridType(0) == FULL);
+    assert(gd.getGridType(1) == FULL);
     for (int j = 1; j < mesh.getNumGrid(1, FULL)-1; ++j) {
         double cosLat = mesh.getCosLat(FULL, j);
         double cosLat2 = cosLat*cosLat;
@@ -83,25 +84,30 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
             double lon = mesh.getGridCoordComp(0, FULL, i);
             double cosRLon = cos(R*lon);
             double cos2RLon = cos(2*R*lon);
-            gh(initTimeLevel, i, j) = phi0+Re*Re*(a+b*cosRLon+c*cos2RLon);
+            gd(initTimeLevel, i, j) = phi0+Re*Re*(a+b*cosRLon+c*cos2RLon);
+            ghs(i, j) = 0;
         }
     }
     // -------------------------------------------------------------------------
     // set Poles
     for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
         if (u.getGridType(1) == FULL) {
-            u(initTimeLevel, i, js) = 0.0;
-            u(initTimeLevel, i, jn) = 0.0;
+            u(initTimeLevel, i, js) = 0;
+            u(initTimeLevel, i, jn) = 0;
         }
         if (v.getGridType(1) == FULL) {
-            v(initTimeLevel, i, js) = 0.0;
-            v(initTimeLevel, i, jn) = 0.0;
+            v(initTimeLevel, i, js) = 0;
+            v(initTimeLevel, i, jn) = 0;
         }
-        gh(initTimeLevel, i, js) = phi0;
-        gh(initTimeLevel, i, jn) = phi0;
+        gd(initTimeLevel, i, js) = phi0;
+        gd(initTimeLevel, i, jn) = phi0;
+        ghs(i, js) = 0;
+        ghs(i, jn) = 0;
+        
     }
     // -------------------------------------------------------------------------
     u.applyBndCond(initTimeLevel);
     v.applyBndCond(initTimeLevel);
-    gh.applyBndCond(initTimeLevel);
+    gd.applyBndCond(initTimeLevel);
+    ghs.applyBndCond();
 }

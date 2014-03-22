@@ -23,7 +23,8 @@ void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
     // create variables
     u.create("u", "m s-1", "zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
-    gh.create("gh", "m2 s-2", "geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
+    gd.create("gd", "m2 s-2", "geopotential depth", *mesh, CENTER, HAS_HALF_LEVEL);
+    ghs.create("ghs", "m2 s-2", "surface geopotential height", *mesh, CENTER);
 
     ut.create("ut", "(m s-1)*m-2", "transformed zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     vt.create("vt", "(m s-1)*m-2", "transformed meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
@@ -31,7 +32,7 @@ void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
 
     dut.create("dut", "m s-2", "zonal wind speed tendency", *mesh, CENTER);
     dvt.create("dvt", "m s-2", "meridional zonal speed tendency", *mesh, CENTER);
-    dgh.create("dgh", "m-2 s-1", "geopotential height tendency", *mesh, CENTER);
+    dgd.create("dgd", "m-2 s-1", "geopotential depth tendency", *mesh, CENTER);
 
     ghu.create("ghu", "m2 s-1", "ut * ght", *mesh, CENTER);
     ghv.create("ghv", "m2 s-1", "vt * ght", *mesh, CENTER);
@@ -91,8 +92,9 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     // -------------------------------------------------------------------------
     // initialize IO manager
     io.init(timeManager);
-    int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::DAYS, 0.5);
-    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gh);
+    int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::HOURS, 1);
+    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
+    io.file(fileIdx).registerOutputField<double, 1, FULL_DIMENSION>(1, &ghs);
     // -------------------------------------------------------------------------
     // copy states
     halfTimeIdx = oldTimeIdx+0.5;
@@ -100,8 +102,8 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
         for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
             u(halfTimeIdx, i, j) = u(oldTimeIdx, i, j);
             v(halfTimeIdx, i, j) = v(oldTimeIdx, i, j);
-            gh(halfTimeIdx, i, j) = gh(oldTimeIdx, i, j);
-            ght(oldTimeIdx, i, j) = sqrt(gh(oldTimeIdx, i, j));
+            gd(halfTimeIdx, i, j) = gd(oldTimeIdx, i, j);
+            ght(oldTimeIdx, i, j) = sqrt(gd(oldTimeIdx, i, j)+ghs(i, j));
             ght(halfTimeIdx, i, j) = ght(oldTimeIdx, i, j);
             ut(oldTimeIdx, i, j) = u(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
             ut(halfTimeIdx, i, j) = ut(oldTimeIdx, i, j);
@@ -112,7 +114,8 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
-    io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
+    io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
+    io.output<double, 1>(fileIdx, 1, &ghs);
     io.close(fileIdx);
     // -------------------------------------------------------------------------
     // main integration loop
@@ -121,7 +124,8 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
         timeManager.advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
-        io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
+        io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
+        io.output<double, 1>(fileIdx, 1, &ghs);
         io.close(fileIdx);
     }
 }
@@ -148,21 +152,21 @@ void BarotropicModel_A_ImplicitMidpoint::integrate() {
     for (iter = 1; iter <= 8; ++iter) {
         // ---------------------------------------------------------------------
         // update geopotential height
-        calcGeopotentialHeightTendency(halfTimeIdx);
+        calcGeopotentialDepthTendency(halfTimeIdx);
         for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
             for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-                gh(newTimeIdx, i, j) = gh(oldTimeIdx, i, j)-dt*dgh(i, j);
+                gd(newTimeIdx, i, j) = gd(oldTimeIdx, i, j)-dt*dgd(i, j);
             }
         }
-        gh.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
+        gd.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         // ---------------------------------------------------------------------
         // transform geopotential height
         for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
-            for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
-                ght(halfTimeIdx, i, j) = sqrt(gh(halfTimeIdx, i, j));
-                ght(newTimeIdx,  i, j) = sqrt(gh(newTimeIdx,  i, j));
+            for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
+                ght(newTimeIdx, i, j) = sqrt(gd(newTimeIdx, i, j)+ghs(i, j));
             }
         }
+        ght.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         // ---------------------------------------------------------------------
         // update velocity
         calcZonalWindTendency(halfTimeIdx);
@@ -176,7 +180,7 @@ void BarotropicModel_A_ImplicitMidpoint::integrate() {
         ut.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         vt.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         // ---------------------------------------------------------------------
-        // transform back velocity
+        // transform back velocity on half time level
         for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
             for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
                 u(newTimeIdx, i, j) = ut(newTimeIdx, i, j)/ght(newTimeIdx, i, j);
@@ -210,7 +214,7 @@ double BarotropicModel_A_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex 
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
             totalEnergy += (pow(ut(timeIdx, i, j), 2)+
                             pow(vt(timeIdx, i, j), 2)+
-                            pow(gh(timeIdx, i, j), 2))*cosLat[j];
+                            pow(gd(timeIdx, i, j)+ghs(i, j), 2))*cosLat[j];
         }
     }
     return totalEnergy;
@@ -220,7 +224,7 @@ double BarotropicModel_A_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &t
     double totalMass = 0.0;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            totalMass += gh(timeIdx, i, j)*cosLat[j];
+            totalMass += gd(timeIdx, i, j)*cosLat[j];
         }
     }
     return totalMass;
@@ -229,11 +233,10 @@ double BarotropicModel_A_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &t
 /**
  *  Input: ut, vt, ght
  *  Intermediate: ghu, ghv
- *  Output: dgh
+ *  Output: dgd
  */
-void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialHeightTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialDepthTendency(const TimeLevelIndex &timeIdx) {
     // calculate intermediate variables
-    // Note: The results are different from computation using u, v, gh.
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
             ghu(i, j) = ut(timeIdx, i, j)*ght(timeIdx, i, j);
@@ -243,30 +246,30 @@ void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialHeightTendency(const Ti
     // normal grids
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            dgh(i, j) = (ghu(i+1, j)-ghu(i-1, j))*factorLon[j]+
+            dgd(i, j) = (ghu(i+1, j)-ghu(i-1, j))*factorLon[j]+
                         (ghv(i, j+1)-ghv(i, j-1))*factorLat[j];
         }
     }
     // pole grids
     // last character 's' and 'n' mean 'Sorth Pole' and 'North Pole' respectively
     int js = 0, jn = mesh->getNumGrid(1, FULL)-1;
-    double dhs = 0.0, dhn = 0.0;
+    double dgds = 0.0, dgdn = 0.0;
     for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-        dhs += ghv(i, js+1);
-        dhn -= ghv(i, jn-1);
+        dgds += ghv(i, js+1);
+        dgdn -= ghv(i, jn-1);
     }
-    dhs *= factorLat[js]/mesh->getNumGrid(0, FULL);
-    dhn *= factorLat[jn]/mesh->getNumGrid(0, FULL);
+    dgds *= factorLat[js]/mesh->getNumGrid(0, FULL);
+    dgdn *= factorLat[jn]/mesh->getNumGrid(0, FULL);
     for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-        dgh(i, js) = dhs;
-        dgh(i, jn) = dhn;
+        dgd(i, js) = dgds;
+        dgd(i, jn) = dgdn;
     }
 
 
     double tmp = 0.0;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            tmp += dgh(i, j)*cosLat[j];
+            tmp += dgd(i, j)*cosLat[j];
         }
     }
     assert(fabs(tmp) < 1.0e-10);
@@ -357,26 +360,28 @@ void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindCoriolis(const TimeLe
 }
 
 /*
- *  Input: gh, ght
+ *  Input: gd, ghs, ght
  *  Output: dut
  */
 void BarotropicModel_A_ImplicitMidpoint::calcZonalWindPressureGradient(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            dut(i, j) += (gh(timeIdx, i+1, j)-gh(timeIdx, i-1, j))*
+            dut(i, j) += (gd(timeIdx, i+1, j)-gd(timeIdx, i-1, j)+
+                          ghs(i+1, j)-ghs(i-1, j))*
                          factorLon[j]*ght(timeIdx, i, j);
         }
     }
 }
 
 /*
- *  Input: gh, ght
+ *  Input: gd, ghs, ght
  *  Output: dvt
  */
 void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindPressureGradient(const TimeLevelIndex &timeIdx) {
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            dvt(i, j) += (gh(timeIdx, i, j+1)-gh(timeIdx, i, j-1))*
+            dvt(i, j) += (gd(timeIdx, i, j+1)-gd(timeIdx, i, j-1)+
+                          ghs(i, j+1)-ghs(i, j-1))*
                          factorLat[j]*cosLat[j]*ght(timeIdx, i, j);
         }
     }

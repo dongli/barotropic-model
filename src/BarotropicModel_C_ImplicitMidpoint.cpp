@@ -21,7 +21,7 @@ void BarotropicModel_C_ImplicitMidpoint::init(int numLon, int numLat) {
     // create variables
     u.create("u", "m s-1", "zonal wind speed", *mesh, X_FACE, HAS_HALF_LEVEL);
     v.create("v", "m s-1", "meridional wind speed", *mesh, Y_FACE, HAS_HALF_LEVEL);
-    gh.create("gh", "m", "geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
+    gd.create("gd", "m", "geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
 
     ut.create("ut", "(m s-1)2", "transformed zonal wind speed", *mesh, X_FACE, HAS_HALF_LEVEL);
     vt.create("vt", "(m s-1)2", "transformed meridional wind speed", *mesh, Y_FACE, HAS_HALF_LEVEL);
@@ -29,10 +29,10 @@ void BarotropicModel_C_ImplicitMidpoint::init(int numLon, int numLat) {
 
     dut.create("dut", "m s-2", "zonal wind speed tendency", *mesh, X_FACE);
     dvt.create("dvt", "m s-2", "meridional zonal speed tendency", *mesh, Y_FACE);
-    dgh.create("dgh", "m-2 s-1", "geopotential height tendency", *mesh, CENTER);
+    dgd.create("dgd", "m-2 s-1", "geopotential height tendency", *mesh, CENTER);
 
     ghu.create("ghu", "m2 s-1", "ut * ght", *mesh, X_FACE);
-    ghv.create("ghv", "m2 s-1", "vt * ght", *mesh, Y_FACE);
+    ghv.create("gdv", "m2 s-1", "vt * ght", *mesh, Y_FACE);
 
 //    uut.create("uut", "(m s-1)3", "u * ut", *mesh, X_FACE);
 //    vut.create("vut", "(m s-1)3", "v * ut", *mesh, XY_VERTEX);
@@ -49,11 +49,11 @@ void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
     // initialize IO manager
     io.init(timeManager);
     int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::DAYS, 0.5);
-    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gh);
+    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
-    io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
+    io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
     io.close(fileIdx);
     // -------------------------------------------------------------------------
     // main integration loop
@@ -62,7 +62,7 @@ void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
         timeManager.advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
-        io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gh);
+        io.output<double>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
         io.close(fileIdx);
     }
 }
@@ -85,7 +85,7 @@ double BarotropicModel_C_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex 
     }
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            totalEnergy += pow(gh(timeIdx, i, j), 2)*cosLatFull[j];
+            totalEnergy += pow(gd(timeIdx, i, j), 2)*cosLatFull[j];
         }
     }
     return totalEnergy;
@@ -95,7 +95,7 @@ double BarotropicModel_C_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &t
     double totalMass = 0;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
-            totalMass += gh(timeIdx, i, j)*cosLatFull[j];
+            totalMass += gd(timeIdx, i, j)*cosLatFull[j];
         }
     }
     return totalMass;

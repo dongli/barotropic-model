@@ -1,5 +1,6 @@
 #include "BarotropicModel_A_ImplicitMidpoint.h"
 #include "RossbyHaurwitzTestCase.h"
+#include "ToyTestCase.h"
 
 int main(int argc, const char *argv[])
 {

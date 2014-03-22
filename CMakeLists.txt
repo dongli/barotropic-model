@@ -20,6 +20,8 @@ add_executable (run_model
     "${PROJECT_SOURCE_DIR}/src/BarotropicTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.cpp"
+    "${PROJECT_SOURCE_DIR}/src/ToyTestCase.h"
+    "${PROJECT_SOURCE_DIR}/src/ToyTestCase.cpp"
     "${PROJECT_SOURCE_DIR}/src/BarotropicModel.h"
     "${PROJECT_SOURCE_DIR}/src/BarotropicModel_A_ImplicitMidpoint.h"
     "${PROJECT_SOURCE_DIR}/src/BarotropicModel_A_ImplicitMidpoint.cpp"

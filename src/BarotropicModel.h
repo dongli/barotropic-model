@@ -17,12 +17,12 @@
  *  -- = - -------- { (--- + u--) + (--------- + v cos𝜑--) } - FU - - ----,
  *  𝜕t     2 a cos𝜑    𝜕𝛌     𝜕𝛌        𝜕𝜑             𝜕𝜑           a  𝜕𝜑
  *
- *  𝜕𝝓        1    𝜕UH   𝜕VH
- *  -- = - ------ (--- + ---),
- *  𝜕t     a cos𝜑  𝜕𝛌    𝜕𝜑
+ *  𝜕𝝓        1    𝜕HU    𝜕HV cos𝜑
+ *  -- = - ------ (---- + --------),
+ *  𝜕t     a cos𝜑   𝜕𝛌       𝜕𝜑
  *
  *  where 𝛌, 𝜑 are the longitude and latitude, a is the sphere radius, 𝝓 is the
- *  geopotential depth, 𝝓ˢ is the surface geopotential height, H = sqrt(𝝓),
+ *  geopotential depth, 𝝓ˢ is the surface geopotential height, H = sqrt(𝝓+𝝓ˢ),
  *  U = uH, V = vH, F = 2𝛀sin𝜑 + u/a tan𝜑.
  */
 class BarotropicModel {
@@ -30,9 +30,9 @@ protected:
     Domain *domain;
     Mesh *mesh;
     IOManager io;
-    Field u, v, gh;
+    Field u, v, gd;
     SingleLevelField ghs;
-    SingleLevelField dut, dvt, dgh;
+    SingleLevelField dut, dvt, dgd;
     Field ut, vt, ght;
     SingleLevelField ghu, ghv;
     double dt;
@@ -56,7 +56,7 @@ public:
 
     Field& getMeridionalWind() { return v; }
 
-    Field& getGeopotentialHeight() { return gh; }
+    Field& getGeopotentialDepth() { return gd; }
     
     SingleLevelField& getSurfaceGeopotentialHeight() { return ghs; }
 };
