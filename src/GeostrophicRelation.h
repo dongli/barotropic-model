@@ -1,7 +1,9 @@
 #ifndef __GeostrophicRelation__
 #define __GeostrophicRelation__
 
-#include "commons.h"
+#include "barotropic_model_commons.h"
+
+namespace barotropic_model {
 
 /**
  *  This class describes the geostrophic relation, and constructs wind flow from
@@ -24,5 +26,7 @@ public:
     static void run(const SingleLevelField &ghs, const TimeLevelIndex &timeIdx,
                     const Field &gd, Field &u, Field &v);
 };
+
+}
 
 #endif // __GeostrophicRelation__

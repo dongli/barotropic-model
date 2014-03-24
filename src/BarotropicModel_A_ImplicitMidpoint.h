@@ -3,6 +3,8 @@
 
 #include "BarotropicModel.h"
 
+namespace barotropic_model {
+
 /**
  *  This barotropic model uses A-grid variable stagger configuration and
  *  implicit midpoint time integration method. The underlying numerical
@@ -55,5 +57,7 @@ private:
 
     void calcMeridionalWindPressureGradient(const TimeLevelIndex &timeIdx);
 };
+
+}
 
 #endif // __BarotropicModel_A_ImplicitMidpoint__

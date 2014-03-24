@@ -1,5 +1,7 @@
 #include "BarotropicModel_A_ImplicitMidpoint.h"
 
+namespace barotropic_model {
+
 BarotropicModel_A_ImplicitMidpoint::BarotropicModel_A_ImplicitMidpoint() {
     REPORT_ONLINE;
 }
@@ -385,4 +387,6 @@ void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindPressureGradient(cons
                          factorLat[j]*cosLat[j]*ght(timeIdx, i, j);
         }
     }
+}
+
 }

@@ -3,6 +3,8 @@
 
 #include "BarotropicTestCase.h"
 
+namespace barotropic_model {
+
 struct Peak {
     SpaceCoord *x;
     double amptitude;
@@ -18,5 +20,7 @@ public:
     
     virtual void calcInitCond(BarotropicModel &model);
 };
+
+}
 
 #endif

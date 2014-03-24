@@ -1,7 +1,9 @@
 #ifndef __BarotropicModel__
 #define __BarotropicModel__
 
-#include "commons.h"
+#include "barotropic_model_commons.h"
+
+namespace barotropic_model {
 
 /**
  *  This is the base class for several barotropic model variants, e.g.,
@@ -60,5 +62,7 @@ public:
     
     SingleLevelField& getSurfaceGeopotentialHeight() { return ghs; }
 };
+
+}
 
 #endif

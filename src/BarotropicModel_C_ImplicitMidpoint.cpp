@@ -1,5 +1,7 @@
 #include "BarotropicModel_C_ImplicitMidpoint.h"
 
+namespace barotropic_model {
+
 BarotropicModel_C_ImplicitMidpoint::BarotropicModel_C_ImplicitMidpoint() {
     REPORT_ONLINE;
 }
@@ -99,4 +101,6 @@ double BarotropicModel_C_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &t
         }
     }
     return totalMass;
+}
+
 }

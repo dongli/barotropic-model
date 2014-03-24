@@ -3,6 +3,8 @@
 
 #include "BarotropicModel.h"
 
+namespace barotropic_model {
+
 class BarotropicTestCase {
 public:
     BarotropicTestCase() {}
@@ -10,5 +12,7 @@ public:
 
     virtual void calcInitCond(BarotropicModel &model) = 0;
 };
+
+}
 
 #endif // __BarotropicTestCase__

@@ -1,5 +1,7 @@
 #include "GeostrophicRelation.h"
 
+namespace barotropic_model {
+
 void GeostrophicRelation::run(const SingleLevelField &ghs,
                               const TimeLevelIndex &timeIdx,
                               const Field &gd, Field &u, Field &v) {
@@ -44,4 +46,6 @@ void GeostrophicRelation::run(const SingleLevelField &ghs,
     // -------------------------------------------------------------------------
     u.applyBndCond(timeIdx);
     v.applyBndCond(timeIdx);
+}
+
 }

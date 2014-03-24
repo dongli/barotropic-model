@@ -1,7 +1,9 @@
-#ifndef __commons__
-#define __commons__
+#ifndef __barotropic_model_commons__
+#define __barotropic_model_commons__
 
 #include "geomtk.h"
+
+namespace barotropic_model {
 
 using geomtk::PI2;
 using geomtk::RAD;
@@ -37,4 +39,6 @@ const double DAYS = geomtk::TimeUnit::DAYS;
 const double OMEGA = 7.292e-5;
 const double G = 9.8;
 
-#endif // __commons__
+}
+
+#endif // __barotropic_model_commons__

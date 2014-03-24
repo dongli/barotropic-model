@@ -3,6 +3,8 @@
 
 #include "BarotropicTestCase.h"
 
+namespace barotropic_model {
+
 class RossbyHaurwitzTestCase : BarotropicTestCase {
 protected:
     int R;          //>! wave number
@@ -14,5 +16,7 @@ public:
 
     virtual void calcInitCond(BarotropicModel &model);
 };
+
+}
 
 #endif // __RossbyHaurwitzTestCase__

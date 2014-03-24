@@ -1,5 +1,7 @@
 #include "RossbyHaurwitzTestCase.h"
 
+namespace barotropic_model {
+
 RossbyHaurwitzTestCase::RossbyHaurwitzTestCase() {
     R = 4;
     omega = 3.924e-6;
@@ -109,4 +111,6 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     v.applyBndCond(initTimeIdx);
     gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
+}
+
 }

@@ -1,6 +1,8 @@
 #include "ToyTestCase.h"
 #include "GeostrophicRelation.h"
 
+namespace barotropic_model {
+
 ToyTestCase::ToyTestCase() {
     REPORT_ONLINE;
 }
@@ -93,4 +95,6 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     u.applyBndCond(initTimeIdx);
     v.applyBndCond(initTimeIdx);
 #endif
+}
+
 }

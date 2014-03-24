@@ -3,6 +3,8 @@
 
 #include "BarotropicModel.h"
 
+namespace barotropic_model {
+
 class BarotropicModel_C_ImplicitMidpoint : public BarotropicModel {
 protected:
     SingleLevelField uut, vut, uvt, vvt;
@@ -32,5 +34,7 @@ private:
     
     double calcTotalMass(const TimeLevelIndex &timeIdx) const;
 };
+
+}
 
 #endif // __BarotropicModel_C_ImplicitMidpoint__

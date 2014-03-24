@@ -1,6 +1,6 @@
-#include "BarotropicModel_A_ImplicitMidpoint.h"
-#include "RossbyHaurwitzTestCase.h"
-#include "ToyTestCase.h"
+#include "barotropic_model.h"
+
+using namespace barotropic_model;
 
 int main(int argc, const char *argv[])
 {
