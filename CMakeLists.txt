@@ -17,6 +17,8 @@ link_directories (
 # executable targets
 add_executable (run_model
     "${PROJECT_SOURCE_DIR}/src/commons.h"
+    "${PROJECT_SOURCE_DIR}/src/GeostrophicRelation.h"
+    "${PROJECT_SOURCE_DIR}/src/GeostrophicRelation.cpp"
     "${PROJECT_SOURCE_DIR}/src/BarotropicTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.h"
     "${PROJECT_SOURCE_DIR}/src/RossbyHaurwitzTestCase.cpp"

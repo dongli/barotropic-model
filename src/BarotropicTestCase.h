@@ -8,7 +8,7 @@ public:
     BarotropicTestCase() {}
     virtual ~BarotropicTestCase() {}
 
-    void calcInitCond(BarotropicModel &model);
+    virtual void calcInitCond(BarotropicModel &model) = 0;
 };
 
 #endif // __BarotropicTestCase__

@@ -23,7 +23,7 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     if (dynamic_cast<const geomtk::SphereDomain*>(&model.getDomain()) == NULL) {
         REPORT_ERROR("Rossby-Haurwitz test case is only valid in sphere domain!");
     }
-    TimeLevelIndex initTimeLevel;
+    TimeLevelIndex initTimeIdx;
     const Mesh &mesh = model.getMesh();
     Field &u = model.getZonalWind();
     Field &v = model.getMeridionalWind();
@@ -50,7 +50,7 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
             double a = cosLat;
             double b = cosLatR/cosLat*sinLat*sinLat*cosRLon*R;
             double c = -cosLatR*cosLat*cosRLon;
-            u(initTimeLevel, i, j) = (a+b+c)*Re*omega;
+            u(initTimeIdx, i, j) = (a+b+c)*Re*omega;
         }
     }
     // -------------------------------------------------------------------------
@@ -65,13 +65,12 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
         for (int i = 0; i < mesh.getNumGrid(0, v.getGridType(0)); ++i) {
             double lon = mesh.getGridCoordComp(0, v.getGridType(0), i);
             double sinRLon = sin(R*lon);
-            v(initTimeLevel, i, j) = -Re*omega*R*cosLatR/cosLat*sinLat*sinRLon;
+            v(initTimeIdx, i, j) = -Re*omega*R*cosLatR/cosLat*sinLat*sinRLon;
         }
     }
-        // -------------------------------------------------------------------------
-        // surface geopotential height and geopotential depth
-    assert(gd.getGridType(0) == FULL);
-    assert(gd.getGridType(1) == FULL);
+    // -------------------------------------------------------------------------
+    // surface geopotential height and geopotential depth
+    assert(gd.getStaggerLocation() == CENTER);
     for (int j = 1; j < mesh.getNumGrid(1, FULL)-1; ++j) {
         double cosLat = mesh.getCosLat(FULL, j);
         double cosLat2 = cosLat*cosLat;
@@ -84,7 +83,7 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
             double lon = mesh.getGridCoordComp(0, FULL, i);
             double cosRLon = cos(R*lon);
             double cos2RLon = cos(2*R*lon);
-            gd(initTimeLevel, i, j) = phi0+Re*Re*(a+b*cosRLon+c*cos2RLon);
+            gd(initTimeIdx, i, j) = phi0+Re*Re*(a+b*cosRLon+c*cos2RLon);
             ghs(i, j) = 0;
         }
     }
@@ -92,22 +91,22 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     // set Poles
     for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
         if (u.getGridType(1) == FULL) {
-            u(initTimeLevel, i, js) = 0;
-            u(initTimeLevel, i, jn) = 0;
+            u(initTimeIdx, i, js) = 0;
+            u(initTimeIdx, i, jn) = 0;
         }
         if (v.getGridType(1) == FULL) {
-            v(initTimeLevel, i, js) = 0;
-            v(initTimeLevel, i, jn) = 0;
+            v(initTimeIdx, i, js) = 0;
+            v(initTimeIdx, i, jn) = 0;
         }
-        gd(initTimeLevel, i, js) = phi0;
-        gd(initTimeLevel, i, jn) = phi0;
+        gd(initTimeIdx, i, js) = phi0;
+        gd(initTimeIdx, i, jn) = phi0;
         ghs(i, js) = 0;
         ghs(i, jn) = 0;
         
     }
     // -------------------------------------------------------------------------
-    u.applyBndCond(initTimeLevel);
-    v.applyBndCond(initTimeLevel);
-    gd.applyBndCond(initTimeLevel);
+    u.applyBndCond(initTimeIdx);
+    v.applyBndCond(initTimeIdx);
+    gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
 }

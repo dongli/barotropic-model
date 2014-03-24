@@ -12,7 +12,7 @@ public:
     RossbyHaurwitzTestCase();
     virtual ~RossbyHaurwitzTestCase();
 
-    void calcInitCond(BarotropicModel &model);
+    virtual void calcInitCond(BarotropicModel &model);
 };
 
 #endif // __RossbyHaurwitzTestCase__

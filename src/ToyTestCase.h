@@ -3,9 +3,20 @@
 
 #include "BarotropicTestCase.h"
 
+struct Peak {
+    SpaceCoord *x;
+    double amptitude;
+    double radius;
+};
+
 class ToyTestCase : public BarotropicTestCase {
+protected:
+    vector<Peak> peaks; //>! local geopotential height peaks
 public:
-    void calcInitCond(BarotropicModel &model);
+    ToyTestCase();
+    virtual ~ToyTestCase();
+    
+    virtual void calcInitCond(BarotropicModel &model);
 };
 
 #endif

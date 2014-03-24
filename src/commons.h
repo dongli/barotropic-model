@@ -1,3 +1,6 @@
+#ifndef __commons__
+#define __commons__
+
 #include "geomtk.h"
 
 using geomtk::PI2;
@@ -11,6 +14,7 @@ using std::endl;
 using std::fixed;
 using std::setw;
 using std::setprecision;
+using std::vector;
 
 const int FULL = geomtk::RLLStagger::GridType::FULL;
 const int HALF = geomtk::RLLStagger::GridType::HALF;
@@ -32,3 +36,5 @@ const double DAYS = geomtk::TimeUnit::DAYS;
 
 const double OMEGA = 7.292e-5;
 const double G = 9.8;
+
+#endif // __commons__

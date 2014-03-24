@@ -19,7 +19,7 @@ begin
 
     wks = gsn_open_wks("pdf", "plot")
 
-    gsn_define_colormap(wks, "rainbow")
+    gsn_define_colormap(wks, "BlueDarkRed18")
 
     res_common = True
     res_common@gsnMaximize = True
@@ -37,7 +37,7 @@ begin
         res_contour_fill = True
         res_contour_fill@cnFillOn = True
         res_contour_fill@cnLinesOn = False
-        res_contour_line@cnLevelSelectionMode = "ManualLevels"
+        res_contour_fill@cnLevelSelectionMode = "ManualLevels"
         res_contour_fill@gsnSpreadColors = True
     end if
 

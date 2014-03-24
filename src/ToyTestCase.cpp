@@ -1,77 +1,96 @@
 #include "ToyTestCase.h"
+#include "GeostrophicRelation.h"
+
+ToyTestCase::ToyTestCase() {
+    REPORT_ONLINE;
+}
+
+ToyTestCase::~ToyTestCase() {
+    for (int i = 0; i < peaks.size(); ++i) {
+        delete peaks[i].x;
+    }
+    REPORT_OFFLINE;
+}
 
 void ToyTestCase::calcInitCond(BarotropicModel &model) {
-    TimeLevelIndex initTimeLevel;
+    // -------------------------------------------------------------------------
+    // collect parameters
+    TimeLevelIndex initTimeIdx;
     const Mesh &mesh = model.getMesh();
     const Domain &domain = static_cast<const Domain&>(mesh.getDomain());
     Field &u = model.getZonalWind();
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
     SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
-    int js = 0, jn = mesh.getNumGrid(1, FULL)-1;
+    // -------------------------------------------------------------------------
+    // set geopotential height peaks
+#define TOYTESTCASE_RANDOM_PEAKS
+#ifdef TOYTESTCASE_RANDOM_PEAKS
+    std::mt19937 rng(clock());
+    std::uniform_real_distribution<double> distLon(0, geomtk::PI2);
+    std::uniform_real_distribution<double> distLat(-M_PI_2, M_PI_2);
+    std::uniform_real_distribution<double> distAmptitude(100*G, 500*G);
+    std::uniform_real_distribution<double> distRadius(domain.getRadius()/3,
+                                                      domain.getRadius()/10);
+#endif
+    peaks.resize(2);
+    for (int i = 0; i < peaks.size(); ++i) {
+        peaks[i].x = new SpaceCoord(2);
+#ifdef TOYTESTCASE_RANDOM_PEAKS
+        double lon = distLon(rng);
+        double lat = distLat(rng);
+        peaks[i].x->setCoord(lon, lat);
+        peaks[i].amptitude = distAmptitude(rng);
+        peaks[i].radius = distRadius(rng);
+#endif
+    }
+//    peaks[0].x->setCoord(180*RAD, 30*RAD);
+//    peaks[0].amptitude = 500*G;
+//    peaks[0].radius = domain.getRadius()/3;
+    // -------------------------------------------------------------------------
+    // surface geopotential height and geopotential depth
+    assert(gd.getStaggerLocation() == CENTER);
+    double gd0 = 8000*G;
+    for (int j = 0; j < mesh.getNumGrid(1, FULL); ++j) {
+        double cosLat = mesh.getCosLat(FULL, j);
+        double sinLat = mesh.getSinLat(FULL, j);
+        for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
+            double lon = mesh.getGridCoordComp(0, FULL, i);
+            gd(initTimeIdx, i, j) = gd0;
+            for (int k = 0; k < peaks.size(); ++k) {
+                double d = domain.calcDistance(*peaks[k].x, lon, sinLat, cosLat);
+                if (d < peaks[k].radius) {
+                    gd(initTimeIdx, i, j) += peaks[k].amptitude*(1+cos(M_PI*d/peaks[k].radius))/2;
+                }
+            }
+            ghs(i, j) = 0;
+        }
+    }
+    // -------------------------------------------------------------------------
+    gd.applyBndCond(initTimeIdx);
+    ghs.applyBndCond();
+#ifdef TOYTESTCASE_GEOSTROPHIC_WIND
+    // -------------------------------------------------------------------------
+    // construct initial wind flow from geostropic relation
+    GeostropicRelation::run(ghs, initTimeIdx, gd, u, v);
+#else
+    // -------------------------------------------------------------------------
+    // set initial wind flow to zero
     // -------------------------------------------------------------------------
     // zonal wind speed
     for (int j = 0; j < mesh.getNumGrid(1, u.getGridType(1)); ++j) {
-        if (u.getGridType(1) == FULL && (j == js || j == jn)) {
-            continue;
-        }
         for (int i = 0; i < mesh.getNumGrid(0, u.getGridType(0)); ++i) {
-            u(initTimeLevel, i, j) = 0;
+            u(initTimeIdx, i, j) = 0;
         }
     }
-    // -------------------------------------------------------------------------
-    // meridional wind speed
+        // -------------------------------------------------------------------------
+        // meridional wind speed
     for (int j = 0; j < mesh.getNumGrid(1, v.getGridType(1)); ++j) {
-        if (v.getGridType(1) == FULL && (j == js || j == jn)) {
-            continue;
-        }
         for (int i = 0; i < mesh.getNumGrid(0, v.getGridType(0)); ++i) {
-            v(initTimeLevel, i, j) = 0;
+            v(initTimeIdx, i, j) = 0;
         }
     }
-    // -------------------------------------------------------------------------
-    // surface geopotential height and geopotential depth
-    assert(gd.getGridType(0) == FULL);
-    assert(gd.getGridType(1) == FULL);
-    double gd0 = 8000*G;
-    double ghs0 = 500*G;
-    double d0 = 20*RAD*domain.getRadius();
-    SpaceCoord x0(domain.getNumDim());
-    x0.setCoord(180*RAD, 0.0);
-    for (int j = 1; j < mesh.getNumGrid(1, FULL)-1; ++j) {
-        double cosLat = mesh.getCosLat(FULL, j);
-        double sinLat = mesh.getCosLat(FULL, j);
-        for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
-            double lon = mesh.getGridCoordComp(0, FULL, i);
-            double d = domain.calcDistance(x0, lon, sinLat, cosLat);
-            if (d < d0) {
-                ghs(i, j) = ghs0*exp(-d*d/d0/d0);
-            } else {
-                ghs(i, j) = 0;
-            }
-            gd(initTimeLevel, i, j) = gd0;
-        }
-    }
-    // -------------------------------------------------------------------------
-    // set Poles
-    for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
-        if (u.getGridType(1) == FULL) {
-            u(initTimeLevel, i, js) = 0;
-            u(initTimeLevel, i, jn) = 0;
-        }
-        if (v.getGridType(1) == FULL) {
-            v(initTimeLevel, i, js) = 0;
-            v(initTimeLevel, i, jn) = 0;
-        }
-        ghs(i, js) = 0;
-        ghs(i, jn) = 0;
-        gd(initTimeLevel, i, js) = gd0;
-        gd(initTimeLevel, i, jn) = gd0;
-        
-    }
-    // -------------------------------------------------------------------------
-    u.applyBndCond(initTimeLevel);
-    v.applyBndCond(initTimeLevel);
-    gd.applyBndCond(initTimeLevel);
-    ghs.applyBndCond();
+    u.applyBndCond(initTimeIdx);
+    v.applyBndCond(initTimeIdx);
+#endif
 }
