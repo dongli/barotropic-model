@@ -28,7 +28,7 @@ public:
 
     virtual void run(TimeManager &timeManager);
 
-    virtual void integrate();
+    virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt);
 private:
     double calcTotalEnergy(const TimeLevelIndex &timeIdx) const;
     

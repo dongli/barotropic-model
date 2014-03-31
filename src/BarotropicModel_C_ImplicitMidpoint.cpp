@@ -46,7 +46,6 @@ void BarotropicModel_C_ImplicitMidpoint::init(int numLon, int numLat) {
 }
 
 void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
-    dt = timeManager.getStepSize();
     // -------------------------------------------------------------------------
     // initialize IO manager
     io.init(timeManager);
@@ -60,7 +59,7 @@ void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
     // -------------------------------------------------------------------------
     // main integration loop
     while (!timeManager.isFinished()) {
-        integrate();
+        integrate(oldTimeIdx, timeManager.getStepSize());
         timeManager.advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
@@ -69,7 +68,8 @@ void BarotropicModel_C_ImplicitMidpoint::run(TimeManager &timeManager) {
     }
 }
 
-void BarotropicModel_C_ImplicitMidpoint::integrate() {
+void BarotropicModel_C_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTimeIdx,
+                                                   double dt) {
     
 }
 

@@ -17,6 +17,8 @@ protected:
 public:
     ToyTestCase();
     virtual ~ToyTestCase();
+
+    void addPeak(const SpaceCoord &x, double amptitude, double radius);
     
     virtual void calcInitCond(BarotropicModel &model);
 };

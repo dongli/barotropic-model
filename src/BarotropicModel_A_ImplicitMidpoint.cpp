@@ -90,29 +90,12 @@ void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
 }
 
 void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
-    dt = timeManager.getStepSize();
     // -------------------------------------------------------------------------
     // initialize IO manager
     io.init(timeManager);
     int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::HOURS, 1);
     io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
     io.file(fileIdx).registerOutputField<double, 1, FULL_DIMENSION>(1, &ghs);
-    // -------------------------------------------------------------------------
-    // copy states
-    halfTimeIdx = oldTimeIdx+0.5;
-    for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
-        for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
-            u(halfTimeIdx, i, j) = u(oldTimeIdx, i, j);
-            v(halfTimeIdx, i, j) = v(oldTimeIdx, i, j);
-            gd(halfTimeIdx, i, j) = gd(oldTimeIdx, i, j);
-            ght(oldTimeIdx, i, j) = sqrt(gd(oldTimeIdx, i, j)+ghs(i, j));
-            ght(halfTimeIdx, i, j) = ght(oldTimeIdx, i, j);
-            ut(oldTimeIdx, i, j) = u(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
-            ut(halfTimeIdx, i, j) = ut(oldTimeIdx, i, j);
-            vt(oldTimeIdx, i, j) = v(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
-            vt(halfTimeIdx, i, j) = vt(oldTimeIdx, i, j);
-        }
-    }
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
@@ -122,7 +105,7 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     // -------------------------------------------------------------------------
     // main integration loop
     while (!timeManager.isFinished()) {
-        integrate();
+        integrate(oldTimeIdx, timeManager.getStepSize());
         timeManager.advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
@@ -132,11 +115,30 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     }
 }
 
-void BarotropicModel_A_ImplicitMidpoint::integrate() {
+void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTimeIdx,
+                                                   double dt) {
     // -------------------------------------------------------------------------
     // set time level indices
     halfTimeIdx = oldTimeIdx+0.5;
     newTimeIdx = oldTimeIdx+1;
+    // -------------------------------------------------------------------------
+    // copy states
+    if (firstRun) {
+        for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
+            for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
+                u(halfTimeIdx, i, j) = u(oldTimeIdx, i, j);
+                v(halfTimeIdx, i, j) = v(oldTimeIdx, i, j);
+                gd(halfTimeIdx, i, j) = gd(oldTimeIdx, i, j);
+                ght(oldTimeIdx, i, j) = sqrt(gd(oldTimeIdx, i, j)+ghs(i, j));
+                ght(halfTimeIdx, i, j) = ght(oldTimeIdx, i, j);
+                ut(oldTimeIdx, i, j) = u(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
+                ut(halfTimeIdx, i, j) = ut(oldTimeIdx, i, j);
+                vt(oldTimeIdx, i, j) = v(oldTimeIdx, i, j)*ght(oldTimeIdx, i, j);
+                vt(halfTimeIdx, i, j) = vt(oldTimeIdx, i, j);
+            }
+        }
+        firstRun = false;
+    }
     // -------------------------------------------------------------------------
     // get old total energy and mass
     double e0 = calcTotalEnergy(oldTimeIdx);

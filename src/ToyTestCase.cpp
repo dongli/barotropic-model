@@ -14,6 +14,15 @@ ToyTestCase::~ToyTestCase() {
     REPORT_OFFLINE;
 }
 
+void ToyTestCase::addPeak(const SpaceCoord &x, double amptitude, double radius) {
+    Peak peak;
+    peak.x = new SpaceCoord(2);
+    *peak.x = x;
+    peak.amptitude = amptitude;
+    peak.radius = radius;
+    peaks.push_back(peak);
+}
+
 void ToyTestCase::calcInitCond(BarotropicModel &model) {
     // -------------------------------------------------------------------------
     // collect parameters
@@ -25,30 +34,29 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     Field &gd = model.getGeopotentialDepth();
     SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
     // -------------------------------------------------------------------------
-    // set geopotential height peaks
+    // set geopotential height peaks if they are not set yet
+    if (peaks.size() == 0) {
 #define TOYTESTCASE_RANDOM_PEAKS
 #ifdef TOYTESTCASE_RANDOM_PEAKS
-    std::mt19937 rng(clock());
-    std::uniform_real_distribution<double> distLon(0, geomtk::PI2);
-    std::uniform_real_distribution<double> distLat(-M_PI_2, M_PI_2);
-    std::uniform_real_distribution<double> distAmptitude(100*G, 500*G);
-    std::uniform_real_distribution<double> distRadius(domain.getRadius()/3,
-                                                      domain.getRadius()/10);
+        std::mt19937 rng(clock());
+        std::uniform_real_distribution<double> distLon(0, geomtk::PI2);
+        std::uniform_real_distribution<double> distLat(-M_PI_2, M_PI_2);
+        std::uniform_real_distribution<double> distAmptitude(100*G, 500*G);
+        std::uniform_real_distribution<double> distRadius(domain.getRadius()/3,
+                                                          domain.getRadius()/10);
 #endif
-    peaks.resize(2);
-    for (int i = 0; i < peaks.size(); ++i) {
-        peaks[i].x = new SpaceCoord(2);
+        peaks.resize(2);
+        for (int i = 0; i < peaks.size(); ++i) {
+            peaks[i].x = new SpaceCoord(2);
 #ifdef TOYTESTCASE_RANDOM_PEAKS
-        double lon = distLon(rng);
-        double lat = distLat(rng);
-        peaks[i].x->setCoord(lon, lat);
-        peaks[i].amptitude = distAmptitude(rng);
-        peaks[i].radius = distRadius(rng);
+            double lon = distLon(rng);
+            double lat = distLat(rng);
+            peaks[i].x->setCoord(lon, lat);
+            peaks[i].amptitude = distAmptitude(rng);
+            peaks[i].radius = distRadius(rng);
 #endif
+        }
     }
-//    peaks[0].x->setCoord(180*RAD, 30*RAD);
-//    peaks[0].amptitude = 500*G;
-//    peaks[0].radius = domain.getRadius()/3;
     // -------------------------------------------------------------------------
     // surface geopotential height and geopotential depth
     assert(gd.getStaggerLocation() == CENTER);
@@ -71,10 +79,11 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     // -------------------------------------------------------------------------
     gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
+#define TOYTESTCASE_GEOSTROPHIC_WIND
 #ifdef TOYTESTCASE_GEOSTROPHIC_WIND
     // -------------------------------------------------------------------------
     // construct initial wind flow from geostropic relation
-    GeostropicRelation::run(ghs, initTimeIdx, gd, u, v);
+    GeostrophicRelation::run(ghs, initTimeIdx, gd, u, v);
 #else
     // -------------------------------------------------------------------------
     // set initial wind flow to zero

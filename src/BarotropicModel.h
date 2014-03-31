@@ -37,9 +37,9 @@ protected:
     SingleLevelField dut, dvt, dgd;
     Field ut, vt, ght;
     SingleLevelField ghu, ghv;
-    double dt;
+    bool firstRun;
 public:
-    BarotropicModel() {}
+    BarotropicModel() { firstRun = true; }
     virtual ~BarotropicModel() {}
 
     virtual void init(int numLon, int numLat) = 0;
@@ -48,7 +48,7 @@ public:
 
     virtual void run(TimeManager &timeManager) = 0;
 
-    virtual void integrate() = 0;
+    virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt) = 0;
 
     const Domain& getDomain() const { return *domain; }
 

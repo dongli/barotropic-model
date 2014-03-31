@@ -28,13 +28,13 @@ const int FULL_DIMENSION = geomtk::RLLSpaceDimensions::FULL_DIMENSION;
 const double MINUTES = geomtk::TimeUnit::MINUTES;
 const double DAYS = geomtk::TimeUnit::DAYS;
 
-#define Domain geomtk::SphereDomain
-#define Mesh geomtk::RLLMesh
-#define Field geomtk::NumericRLLField<double, 2>
-#define SingleLevelField geomtk::NumericRLLField<double, 1>
-#define TimeLevelIndex geomtk::TimeLevelIndex<2>
-#define IOManager geomtk::IOManager<geomtk::RLLDataFile>
-#define SpaceCoord geomtk::SphereCoord
+typedef geomtk::SphereDomain Domain;
+typedef geomtk::RLLMesh Mesh;
+typedef geomtk::NumericRLLField<double, 2> Field;
+typedef geomtk::NumericRLLField<double, 1> SingleLevelField;
+typedef geomtk::IOManager<geomtk::RLLDataFile> IOManager;
+typedef geomtk::TimeLevelIndex<2> TimeLevelIndex;
+typedef geomtk::SphereCoord SpaceCoord;
 
 const double OMEGA = 7.292e-5;
 const double G = 9.8;
