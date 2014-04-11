@@ -14,12 +14,7 @@ if (NOT use_as_submodule)
     # external libraries
     # GeoMTK
     add_subdirectory ("${PROJECT_SOURCE_DIR}/external/geomtk")
-    include_directories (
-        ${GEOMTK_INCLUDE_DIRS}
-    )
-    link_directories (
-        ${GEOMTK_LIBRARY_DIRS}
-    )
+    include_directories (${GEOMTK_INCLUDE_DIRS})
 endif ()
 
 # ------------------------------------------------------------------------------
@@ -41,12 +36,12 @@ set (sources
 )
 if (use_as_submodule)
     set (BAROTROPIC_MODEL_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src" PARENT_SCOPE)
-    set (BAROTROPIC_MODEL_LIBRARY_DIRS "${PROJECT_SOURCE_DIR}/src" PARENT_SCOPE)
 endif ()
 
 # ------------------------------------------------------------------------------
 # library targets
-add_library (barotropic-model STATIC ${sources})
+add_library (barotropic-model SHARED ${sources})
+target_link_libraries (barotropic-model geomtk)
 add_dependencies (barotropic-model geomtk)
 
 # ------------------------------------------------------------------------------

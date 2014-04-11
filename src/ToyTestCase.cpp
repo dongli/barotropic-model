@@ -36,7 +36,7 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     // -------------------------------------------------------------------------
     // set geopotential height peaks if they are not set yet
     if (peaks.size() == 0) {
-#define TOYTESTCASE_RANDOM_PEAKS
+//#define TOYTESTCASE_RANDOM_PEAKS
 #ifdef TOYTESTCASE_RANDOM_PEAKS
         std::mt19937 rng(clock());
         std::uniform_real_distribution<double> distLon(0, geomtk::PI2);
