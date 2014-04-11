@@ -143,7 +143,7 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
     // get old total energy and mass
     double e0 = calcTotalEnergy(oldTimeIdx);
     double m0 = calcTotalMass(oldTimeIdx);
-#ifdef DEBUG
+#ifndef NDEBUG
     cout << "iteration ";
 #endif
     cout << "energy: ";
@@ -199,7 +199,7 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
         if (fabs(e1-e0)*2/(e1+e0) < 5.0e-15) {
             break;
         }
-#ifdef DEBUG
+#ifndef NDEBUG
         double m1 = calcTotalMass(newTimeIdx);
         cout << setw(9) << iter;
         cout << " energy: ";
@@ -268,8 +268,7 @@ void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialDepthTendency(const Tim
         dgd(i, js) = dgds;
         dgd(i, jn) = dgdn;
     }
-
-
+#ifndef NDEBUG
     double tmp = 0.0;
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
@@ -277,6 +276,7 @@ void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialDepthTendency(const Tim
         }
     }
     assert(fabs(tmp) < 1.0e-10);
+#endif
 }
 
 void BarotropicModel_A_ImplicitMidpoint::calcZonalWindTendency(const TimeLevelIndex &timeIdx) {
