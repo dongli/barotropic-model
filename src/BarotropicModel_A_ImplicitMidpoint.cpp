@@ -27,6 +27,7 @@ void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
     v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     gd.create("gd", "m2 s-2", "geopotential depth", *mesh, CENTER, HAS_HALF_LEVEL);
     ghs.create("ghs", "m2 s-2", "surface geopotential height", *mesh, CENTER);
+    gh.create("gh", "m2 s-2", "geopotential height", *mesh, CENTER);
 
     ut.create("ut", "(m s-1)*m-2", "transformed zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     vt.create("vt", "(m s-1)*m-2", "transformed meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
@@ -210,6 +211,12 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
         cout << setw(20) << setprecision(16) << fabs(e1-e0)*2/(e1+e0) << endl;
 #endif
     }
+    for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
+        for (int i = 0; i < mesh->getNumGrid(0, FULL); ++i) {
+            gh(i, j) = gd(newTimeIdx, i, j)+ghs(i, j);
+        }
+    }
+    gh.applyBndCond();
 }
 
 double BarotropicModel_A_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex &timeIdx) const {

@@ -33,6 +33,7 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
     SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
+    SingleLevelField &gh = model.getGeopotentialHeight();
     // -------------------------------------------------------------------------
     // set geopotential height peaks if they are not set yet
     if (peaks.size() == 0) {
@@ -58,7 +59,26 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
         }
     }
     // -------------------------------------------------------------------------
-    // surface geopotential height and geopotential depth
+    // surface geopotential height
+    SpaceCoord x(2);
+    x.setCoord(180*RAD, 45*RAD);
+    double ghs0 = 1500*G;
+    double topoRadius = domain.getRadius()/3;
+    for (int j = 0; j < mesh.getNumGrid(1, FULL); ++j) {
+        double cosLat = mesh.getCosLat(FULL, j);
+        double sinLat = mesh.getSinLat(FULL, j);
+        for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
+            double lon = mesh.getGridCoordComp(0, FULL, i);
+            double d = domain.calcDistance(x, lon, sinLat, cosLat);
+            if (d < topoRadius) {
+                ghs(i, j) = ghs0*(1+cos(M_PI*d/topoRadius))/2;
+            } else {
+                ghs(i, j) = 0;
+            }
+        }
+    }
+    // -------------------------------------------------------------------------
+    // geopotential depth
     assert(gd.getStaggerLocation() == CENTER);
     double gd0 = 8000*G;
     for (int j = 0; j < mesh.getNumGrid(1, FULL); ++j) {
@@ -73,12 +93,13 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
                     gd(initTimeIdx, i, j) += peaks[k].amptitude*(1+cos(M_PI*d/peaks[k].radius))/2;
                 }
             }
-            ghs(i, j) = 0;
+            gh(i, j) += gd(initTimeIdx, i, j)+ghs(i, j);
         }
     }
     // -------------------------------------------------------------------------
     gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
+    gh.applyBndCond();
 #define TOYTESTCASE_GEOSTROPHIC_WIND
 #ifdef TOYTESTCASE_GEOSTROPHIC_WIND
     // -------------------------------------------------------------------------

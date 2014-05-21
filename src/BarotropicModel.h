@@ -33,7 +33,7 @@ protected:
     Mesh *mesh;
     IOManager io;
     Field u, v, gd;
-    SingleLevelField ghs;
+    SingleLevelField ghs, gh;
     SingleLevelField dut, dvt, dgd;
     Field ut, vt, ght;
     SingleLevelField ghu, ghv;
@@ -61,6 +61,8 @@ public:
     Field& getGeopotentialDepth() { return gd; }
     
     SingleLevelField& getSurfaceGeopotentialHeight() { return ghs; }
+    
+    SingleLevelField& getGeopotentialHeight() { return gh; }
 };
 
 }
