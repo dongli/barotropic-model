@@ -33,7 +33,6 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
     SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
-    SingleLevelField &gh = model.getGeopotentialHeight();
     // -------------------------------------------------------------------------
     // set geopotential height peaks if they are not set yet
     if (peaks.size() == 0) {
@@ -93,13 +92,11 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
                     gd(initTimeIdx, i, j) += peaks[k].amptitude*(1+cos(M_PI*d/peaks[k].radius))/2;
                 }
             }
-            gh(i, j) += gd(initTimeIdx, i, j)+ghs(i, j);
         }
     }
     // -------------------------------------------------------------------------
     gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
-    gh.applyBndCond();
 #define TOYTESTCASE_GEOSTROPHIC_WIND
 #ifdef TOYTESTCASE_GEOSTROPHIC_WIND
     // -------------------------------------------------------------------------

@@ -31,7 +31,6 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
     SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
-    SingleLevelField &gh = model.getGeopotentialHeight();
     double Re = model.getDomain().getRadius();
     double R2 = R*R;
     double R_1 = R+1;
@@ -88,7 +87,6 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
             double cos2RLon = cos(2*R*lon);
             gd(initTimeIdx, i, j) = phi0+Re*Re*(a+b*cosRLon+c*cos2RLon);
             ghs(i, j) = 0;
-            gh(i, j) = gd(initTimeIdx, i, j);
         }
     }
     // -------------------------------------------------------------------------
@@ -113,7 +111,6 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     v.applyBndCond(initTimeIdx);
     gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
-    gh.applyBndCond();
 }
 
 }

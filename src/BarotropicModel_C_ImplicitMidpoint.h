@@ -7,8 +7,6 @@ namespace barotropic_model {
 
 class BarotropicModel_C_ImplicitMidpoint : public BarotropicModel {
 protected:
-    SingleLevelField uut, vut, uvt, vvt;
-
     double dlon, dlat;
     vec cosLatFull, cosLatHalf, tanLat;
     vec factorCor;      //>! Coriolis factor: 2*OMEGA*sin(lat)

@@ -24,8 +24,8 @@ namespace barotropic_model {
  *  𝜕t     a cos𝜑   𝜕𝛌       𝜕𝜑
  *
  *  where 𝛌, 𝜑 are the longitude and latitude, a is the sphere radius, 𝝓 is the
- *  geopotential depth, 𝝓ˢ is the surface geopotential height, H = sqrt(𝝓+𝝓ˢ),
- *  U = uH, V = vH, F = 2𝛀sin𝜑 + u/a tan𝜑.
+ *  geopotential depth, 𝝓ˢ is the surface geopotential, H = sqrt(𝝓), U = uH,
+ *  V = vH, F = 2𝛀sin𝜑 + u/a tan𝜑.
  */
 class BarotropicModel {
 protected:
@@ -33,10 +33,10 @@ protected:
     Mesh *mesh;
     IOManager io;
     Field u, v, gd;
-    SingleLevelField ghs, gh;
+    SingleLevelField ghs;
     SingleLevelField dut, dvt, dgd;
-    Field ut, vt, ght;
-    SingleLevelField ghu, ghv;
+    Field ut, vt, gdt;
+    SingleLevelField gdu, gdv;
     bool firstRun;
 public:
     BarotropicModel() { firstRun = true; }
@@ -61,8 +61,6 @@ public:
     Field& getGeopotentialDepth() { return gd; }
     
     SingleLevelField& getSurfaceGeopotentialHeight() { return ghs; }
-    
-    SingleLevelField& getGeopotentialHeight() { return gh; }
 };
 
 }
