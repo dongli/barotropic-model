@@ -20,11 +20,11 @@ public:
     BarotropicModel_C_ImplicitMidpoint();
     virtual ~BarotropicModel_C_ImplicitMidpoint();
 
-    virtual void init(int numLon, int numLat);
+    virtual void init(TimeManager &timeManager, int numLon, int numLat);
 
     virtual void input(const std::string &fileName) {}
 
-    virtual void run(TimeManager &timeManager);
+    virtual void run();
 
     virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt);
 private:

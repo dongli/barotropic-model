@@ -30,7 +30,7 @@ void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
     Field &u = model.getZonalWind();
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
-    SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
+    SingleLevelField &ghs = model.getSurfaceGeopotential();
     double Re = model.getDomain().getRadius();
     double R2 = R*R;
     double R_1 = R+1;

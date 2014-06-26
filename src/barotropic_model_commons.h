@@ -17,6 +17,7 @@ using std::fixed;
 using std::setw;
 using std::setprecision;
 using std::vector;
+using std::string;
 
 const int FULL = geomtk::RLLStagger::GridType::FULL;
 const int HALF = geomtk::RLLStagger::GridType::HALF;

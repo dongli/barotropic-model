@@ -32,7 +32,7 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     Field &u = model.getZonalWind();
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
-    SingleLevelField &ghs = model.getSurfaceGeopotentialHeight();
+    SingleLevelField &ghs = model.getSurfaceGeopotential();
     // -------------------------------------------------------------------------
     // set geopotential height peaks if they are not set yet
     if (peaks.size() == 0) {

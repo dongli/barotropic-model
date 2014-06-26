@@ -10,76 +10,65 @@ BarotropicModel_A_ImplicitMidpoint::~BarotropicModel_A_ImplicitMidpoint() {
     REPORT_OFFLINE;
 }
 
-void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
-    // -------------------------------------------------------------------------
+void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
+                                              int numLon, int numLat) {
+    this->timeManager = &timeManager;
+    // initialize IO manager
+    io.init(timeManager);
     // initialize domain
     domain = new Domain(2);
     domain->setRadius(6.371e6);
-    // -------------------------------------------------------------------------
     // initialize mesh
     mesh = new Mesh(*domain);
     mesh->init(numLon, numLat);
     dlon = mesh->getGridInterval(0, FULL, 0);
     dlat = mesh->getGridInterval(1, FULL, 0); // assume equidistance grids
-    // -------------------------------------------------------------------------
     // create variables
     u.create("u", "m s-1", "zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     gd.create("gd", "m2 s-2", "geopotential depth", *mesh, CENTER, HAS_HALF_LEVEL);
-    ghs.create("ghs", "m2 s-2", "surface geopotential height", *mesh, CENTER);
-
+    ghs.create("ghs", "m2 s-2", "surface geopotential", *mesh, CENTER);
     ut.create("ut", "(m s-1)*m-2", "transformed zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     vt.create("vt", "(m s-1)*m-2", "transformed meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
     gdt.create("gdt", "m-2", "transformed geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
-
     dut.create("dut", "m s-2", "zonal wind speed tendency", *mesh, CENTER);
     dvt.create("dvt", "m s-2", "meridional zonal speed tendency", *mesh, CENTER);
     dgd.create("dgd", "m-2 s-1", "geopotential depth tendency", *mesh, CENTER);
-
     gdu.create("gdu", "m2 s-1", "ut * gdt", *mesh, CENTER);
     gdv.create("gdv", "m2 s-1", "vt * gdt", *mesh, CENTER);
-
     fu.create("fu", "* m s-1", "* * u", *mesh, CENTER);
     fv.create("fv", "* m s-1", "* * v", *mesh, CENTER);
-    // -------------------------------------------------------------------------
     // set coefficients
     // Note: Some coefficients containing cos(lat) will be specialized at Poles.
     int js = 0, jn = mesh->getNumGrid(1, FULL)-1;
-
     cosLat.set_size(mesh->getNumGrid(1, FULL));
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         cosLat[j] = mesh->getCosLat(FULL, j);
     }
     cosLat[js] = mesh->getCosLat(HALF,   js)*0.25;
     cosLat[jn] = mesh->getCosLat(HALF, jn-1)*0.25;
-
     tanLat.set_size(mesh->getNumGrid(1, FULL));
     for (int j = 1; j < mesh->getNumGrid(1, FULL)-1; ++j) {
         tanLat[j] = mesh->getTanLat(FULL, j);
     }
     tanLat[js] = -1/cosLat[js];
     tanLat[jn] =  1/cosLat[jn];
-
     factorCor.set_size(mesh->getNumGrid(1, FULL));
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         factorCor[j] = 2*OMEGA*mesh->getSinLat(FULL, j);
     }
-
     factorCur.set_size(mesh->getNumGrid(1, FULL));
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         factorCur[j] = tanLat[j]/domain->getRadius();
     }
-
     factorLon.set_size(mesh->getNumGrid(1, FULL));
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         factorLon[j] = 1/(2*dlon*domain->getRadius()*cosLat[j]);
     }
-
     factorLat.set_size(mesh->getNumGrid(1, FULL));
     for (int j = 0; j < mesh->getNumGrid(1, FULL); ++j) {
         factorLat[j] = 1/(2*dlat*domain->getRadius()*cosLat[j]);
     }
-    // -------------------------------------------------------------------------
     // set variables in Poles
     for (int i = -1; i < mesh->getNumGrid(0, FULL)+1; ++i) {
         dut(i, js) = 0.0; dut(i, jn) = 0.0;
@@ -89,10 +78,24 @@ void BarotropicModel_A_ImplicitMidpoint::init(int numLon, int numLat) {
     }
 }
 
-void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
-    // -------------------------------------------------------------------------
-    // initialize IO manager
-    io.init(timeManager);
+void BarotropicModel_A_ImplicitMidpoint::input(const string &fileName) {
+    int fileIdx = io.registerInputFile(*mesh, fileName);
+    io.file(fileIdx).registerInputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
+    io.file(fileIdx).registerInputField<double, 1, FULL_DIMENSION>(1, &ghs);
+    io.open(fileIdx);
+    io.updateTime(fileIdx, *timeManager);
+    io.input<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
+    io.input<double, 1>(fileIdx, 1, &ghs);
+    io.close(fileIdx);
+    io.removeFile(fileIdx);
+    u.applyBndCond(oldTimeIdx);
+    v.applyBndCond(oldTimeIdx);
+    gd.applyBndCond(oldTimeIdx);
+    ghs.applyBndCond();
+}
+
+void BarotropicModel_A_ImplicitMidpoint::run() {
+    // register output fields
     int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::HOURS, 1);
     io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
     io.file(fileIdx).registerOutputField<double, 1, FULL_DIMENSION>(1, &ghs);
@@ -104,9 +107,9 @@ void BarotropicModel_A_ImplicitMidpoint::run(TimeManager &timeManager) {
     io.close(fileIdx);
     // -------------------------------------------------------------------------
     // main integration loop
-    while (!timeManager.isFinished()) {
-        integrate(oldTimeIdx, timeManager.getStepSize());
-        timeManager.advance();
+    while (!timeManager->isFinished()) {
+        integrate(oldTimeIdx, timeManager->getStepSize());
+        timeManager->advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
         io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);

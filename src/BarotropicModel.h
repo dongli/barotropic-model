@@ -31,6 +31,7 @@ class BarotropicModel {
 protected:
     Domain *domain;
     Mesh *mesh;
+    TimeManager *timeManager;
     IOManager io;
     Field u, v, gd;
     SingleLevelField ghs;
@@ -42,17 +43,17 @@ public:
     BarotropicModel() { firstRun = true; }
     virtual ~BarotropicModel() {}
 
-    virtual void init(int numLon, int numLat) = 0;
+    virtual void init(TimeManager &timeManager, int numLon, int numLat) = 0;
 
-    virtual void input(const std::string &fileName) = 0;
+    virtual void input(const string &fileName) = 0;
 
-    virtual void run(TimeManager &timeManager) = 0;
+    virtual void run() = 0;
 
     virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt) = 0;
 
-    const Domain& getDomain() const { return *domain; }
+    Domain& getDomain() const { return *domain; }
 
-    const Mesh& getMesh() const { return *mesh; }
+    Mesh& getMesh() const { return *mesh; }
 
     Field& getZonalWind() { return u; }
 
@@ -60,7 +61,7 @@ public:
 
     Field& getGeopotentialDepth() { return gd; }
     
-    SingleLevelField& getSurfaceGeopotentialHeight() { return ghs; }
+    SingleLevelField& getSurfaceGeopotential() { return ghs; }
 };
 
 }

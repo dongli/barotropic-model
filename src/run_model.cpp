@@ -12,10 +12,10 @@ int main(int argc, const char *argv[])
 
     timeManager.init(startTime, endTime, 4*MINUTES);
 
-    model.init(80, 41);
+    model.init(timeManager, 80, 41);
     testCase.calcInitCond(model);
 
-    model.run(timeManager);
+    model.run();
 
     return 0;
 }
