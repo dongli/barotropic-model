@@ -9,7 +9,7 @@ using geomtk::PI2;
 using geomtk::RAD;
 using geomtk::TimeManager;
 using geomtk::Time;
-using geomtk::IOFrequencyUnit;
+using geomtk::TimeStepUnit;
 using arma::vec;
 using std::cout;
 using std::endl;
@@ -31,11 +31,12 @@ const double DAYS = geomtk::TimeUnit::DAYS;
 
 typedef geomtk::SphereDomain Domain;
 typedef geomtk::RLLMesh Mesh;
-typedef geomtk::NumericRLLField<double, 2> Field;
-typedef geomtk::NumericRLLField<double, 1> SingleLevelField;
+typedef geomtk::SphereCoord SpaceCoord;
+using geomtk::StampString;
+typedef geomtk::RLLField<double, 2> Field;
+typedef geomtk::RLLField<double, 1> SingleLevelField;
 typedef geomtk::IOManager<geomtk::RLLDataFile> IOManager;
 typedef geomtk::TimeLevelIndex<2> TimeLevelIndex;
-typedef geomtk::SphereCoord SpaceCoord;
 
 const double OMEGA = 7.292e-5;
 const double G = 9.8;

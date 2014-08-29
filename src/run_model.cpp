@@ -8,7 +8,7 @@ int main(int argc, const char *argv[])
     RossbyHaurwitzTestCase testCase;
 
     TimeManager timeManager;
-    Time startTime, endTime(68*DAYS);
+    Time startTime, endTime(120*DAYS);
 
     timeManager.init(startTime, endTime, 4*MINUTES);
 

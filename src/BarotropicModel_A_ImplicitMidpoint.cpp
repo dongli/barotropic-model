@@ -24,20 +24,20 @@ void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
     dlon = mesh->getGridInterval(0, FULL, 0);
     dlat = mesh->getGridInterval(1, FULL, 0); // assume equidistance grids
     // create variables
-    u.create("u", "m s-1", "zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
-    v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
-    gd.create("gd", "m2 s-2", "geopotential depth", *mesh, CENTER, HAS_HALF_LEVEL);
-    ghs.create("ghs", "m2 s-2", "surface geopotential", *mesh, CENTER);
-    ut.create("ut", "(m s-1)*m-2", "transformed zonal wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
-    vt.create("vt", "(m s-1)*m-2", "transformed meridional wind speed", *mesh, CENTER, HAS_HALF_LEVEL);
-    gdt.create("gdt", "m-2", "transformed geopotential height", *mesh, CENTER, HAS_HALF_LEVEL);
-    dut.create("dut", "m s-2", "zonal wind speed tendency", *mesh, CENTER);
-    dvt.create("dvt", "m s-2", "meridional zonal speed tendency", *mesh, CENTER);
-    dgd.create("dgd", "m-2 s-1", "geopotential depth tendency", *mesh, CENTER);
-    gdu.create("gdu", "m2 s-1", "ut * gdt", *mesh, CENTER);
-    gdv.create("gdv", "m2 s-1", "vt * gdt", *mesh, CENTER);
-    fu.create("fu", "* m s-1", "* * u", *mesh, CENTER);
-    fv.create("fv", "* m s-1", "* * v", *mesh, CENTER);
+    u.create("u", "m s-1", "zonal wind speed", *mesh, CENTER, 2, HAS_HALF_LEVEL);
+    v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, 2, HAS_HALF_LEVEL);
+    gd.create("gd", "m2 s-2", "geopotential depth", *mesh, CENTER, 2, HAS_HALF_LEVEL);
+    ghs.create("ghs", "m2 s-2", "surface geopotential", *mesh, CENTER, 2);
+    ut.create("ut", "(m s-1)*m-2", "transformed zonal wind speed", *mesh, CENTER, 2, HAS_HALF_LEVEL);
+    vt.create("vt", "(m s-1)*m-2", "transformed meridional wind speed", *mesh, CENTER, 2, HAS_HALF_LEVEL);
+    gdt.create("gdt", "m-2", "transformed geopotential height", *mesh, CENTER, 2, HAS_HALF_LEVEL);
+    dut.create("dut", "m s-2", "zonal wind speed tendency", *mesh, CENTER, 2);
+    dvt.create("dvt", "m s-2", "meridional zonal speed tendency", *mesh, CENTER, 2);
+    dgd.create("dgd", "m-2 s-1", "geopotential depth tendency", *mesh, CENTER, 2);
+    gdu.create("gdu", "m2 s-1", "ut * gdt", *mesh, CENTER, 2);
+    gdv.create("gdv", "m2 s-1", "vt * gdt", *mesh, CENTER, 2);
+    fu.create("fu", "* m s-1", "* * u", *mesh, CENTER, 2);
+    fv.create("fv", "* m s-1", "* * v", *mesh, CENTER, 2);
     // set coefficients
     // Note: Some coefficients containing cos(lat) will be specialized at Poles.
     int js = 0, jn = mesh->getNumGrid(1, FULL)-1;
@@ -80,12 +80,12 @@ void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
 
 void BarotropicModel_A_ImplicitMidpoint::input(const string &fileName) {
     int fileIdx = io.registerInputFile(*mesh, fileName);
-    io.file(fileIdx).registerInputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
-    io.file(fileIdx).registerInputField<double, 1, FULL_DIMENSION>(1, &ghs);
+    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&u, &v, &gd});
+    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&ghs});
     io.open(fileIdx);
     io.updateTime(fileIdx, *timeManager);
-    io.input<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
-    io.input<double, 1>(fileIdx, 1, &ghs);
+    io.input<double, 2>(fileIdx, oldTimeIdx, {&u, &v, &gd});
+    io.input<double>(fileIdx, {&ghs});
     io.close(fileIdx);
     io.removeFile(fileIdx);
     u.applyBndCond(oldTimeIdx);
@@ -96,14 +96,15 @@ void BarotropicModel_A_ImplicitMidpoint::input(const string &fileName) {
 
 void BarotropicModel_A_ImplicitMidpoint::run() {
     // register output fields
-    int fileIdx = io.registerOutputFile(*mesh, "output", IOFrequencyUnit::HOURS, 1);
-    io.file(fileIdx).registerOutputField<double, 2, FULL_DIMENSION>(3, &u, &v, &gd);
-    io.file(fileIdx).registerOutputField<double, 1, FULL_DIMENSION>(1, &ghs);
+    StampString filePattern("output.%5s.nc");
+    int fileIdx = io.registerOutputFile(*mesh, filePattern, TimeStepUnit::HOUR, 1);
+    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&u, &v, &gd});
+    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&ghs});
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
-    io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
-    io.output<double, 1>(fileIdx, 1, &ghs);
+    io.output<double, 2>(fileIdx, oldTimeIdx, {&u, &v, &gd});
+    io.output<double>(fileIdx, {&ghs});
     io.close(fileIdx);
     // -------------------------------------------------------------------------
     // main integration loop
@@ -112,8 +113,8 @@ void BarotropicModel_A_ImplicitMidpoint::run() {
         timeManager->advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
-        io.output<double, 2>(fileIdx, oldTimeIdx, 3, &u, &v, &gd);
-        io.output<double, 1>(fileIdx, 1, &ghs);
+        io.output<double, 2>(fileIdx, oldTimeIdx, {&u, &v, &gd});
+        io.output<double>(fileIdx, {&ghs});
         io.close(fileIdx);
     }
 }
