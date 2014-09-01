@@ -15,10 +15,10 @@ void GeostrophicRelation::run(const SingleLevelField &ghs,
         double dlon = mesh.getGridInterval(0, FULL, 0);
         double dlat = mesh.getGridInterval(1, FULL, 1); // assume equidistant grids
         // normal grids
-        for (int j = 1; j < mesh.getNumGrid(1, FULL)-1; ++j) {
+        for (int j = mesh.js(FULL)+1; j <= mesh.je(FULL)-1; ++j) {
             double cosLat = mesh.getCosLat(FULL, j);
             double f = 2*OMEGA*mesh.getSinLat(FULL, j);
-            for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
+            for (int i = mesh.is(FULL); i <= mesh.ie(FULL); ++i) {
                 if (fabs(f) <= 1.0e-15) {
                     u(timeIdx, i, j) = 0;
                     v(timeIdx, i, j) = 0;
@@ -33,7 +33,7 @@ void GeostrophicRelation::run(const SingleLevelField &ghs,
             }
         }
         // pole grids
-        for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
+        for (int i = mesh.is(FULL); i <= mesh.ie(FULL); ++i) {
             u(timeIdx, i, js) = 0;
             u(timeIdx, i, jn) = 0;
             v(timeIdx, i, js) = 0;

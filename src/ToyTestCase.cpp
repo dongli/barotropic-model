@@ -24,8 +24,6 @@ void ToyTestCase::addPeak(const SpaceCoord &x, double amptitude, double radius) 
 }
 
 void ToyTestCase::calcInitCond(BarotropicModel &model) {
-    // -------------------------------------------------------------------------
-    // collect parameters
     TimeLevelIndex initTimeIdx;
     const Mesh &mesh = model.getMesh();
     const Domain &domain = static_cast<const Domain&>(mesh.getDomain());
@@ -33,8 +31,7 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     Field &v = model.getMeridionalWind();
     Field &gd = model.getGeopotentialDepth();
     SingleLevelField &ghs = model.getSurfaceGeopotential();
-    // -------------------------------------------------------------------------
-    // set geopotential height peaks if they are not set yet
+    // Set geopotential height peaks if they are not set yet.
     if (peaks.size() == 0) {
 //#define TOYTESTCASE_RANDOM_PEAKS
 #ifdef TOYTESTCASE_RANDOM_PEAKS
@@ -57,16 +54,15 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
 #endif
         }
     }
-    // -------------------------------------------------------------------------
-    // surface geopotential height
+    // Set surface geopotential height.
     SpaceCoord x(2);
     x.setCoord(180*RAD, 45*RAD);
     double ghs0 = 1500*G;
     double topoRadius = domain.getRadius()/3;
-    for (int j = 0; j < mesh.getNumGrid(1, FULL); ++j) {
+    for (int j = mesh.js(FULL); j <= mesh.je(FULL); ++j) {
         double cosLat = mesh.getCosLat(FULL, j);
         double sinLat = mesh.getSinLat(FULL, j);
-        for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
+        for (int i = mesh.is(FULL); i <= mesh.ie(FULL); ++i) {
             double lon = mesh.getGridCoordComp(0, FULL, i);
             double d = domain.calcDistance(x, lon, sinLat, cosLat);
             if (d < topoRadius) {
@@ -76,14 +72,13 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
             }
         }
     }
-    // -------------------------------------------------------------------------
-    // geopotential depth
+    // Set geopotential depth.
     assert(gd.getStaggerLocation() == CENTER);
     double gd0 = 8000*G;
-    for (int j = 0; j < mesh.getNumGrid(1, FULL); ++j) {
+    for (int j = mesh.js(FULL); j <= mesh.je(FULL); ++j) {
         double cosLat = mesh.getCosLat(FULL, j);
         double sinLat = mesh.getSinLat(FULL, j);
-        for (int i = 0; i < mesh.getNumGrid(0, FULL); ++i) {
+        for (int i = mesh.is(FULL); i <= mesh.ie(FULL); ++i) {
             double lon = mesh.getGridCoordComp(0, FULL, i);
             gd(initTimeIdx, i, j) = gd0;
             for (int k = 0; k < peaks.size(); ++k) {
@@ -94,28 +89,23 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
             }
         }
     }
-    // -------------------------------------------------------------------------
     gd.applyBndCond(initTimeIdx);
     ghs.applyBndCond();
 #define TOYTESTCASE_GEOSTROPHIC_WIND
 #ifdef TOYTESTCASE_GEOSTROPHIC_WIND
-    // -------------------------------------------------------------------------
-    // construct initial wind flow from geostropic relation
+    // Construct initial wind flow from geostropic relation.
     GeostrophicRelation::run(ghs, initTimeIdx, gd, u, v);
 #else
-    // -------------------------------------------------------------------------
-    // set initial wind flow to zero
-    // -------------------------------------------------------------------------
-    // zonal wind speed
-    for (int j = 0; j < mesh.getNumGrid(1, u.getGridType(1)); ++j) {
-        for (int i = 0; i < mesh.getNumGrid(0, u.getGridType(0)); ++i) {
+    // Set initial wind flow to zero.
+    // Set zonal wind speed.
+    for (int j = mesh.js(u.getGridType(1)); j <= mesh.je(u.getGridType(1)); ++j) {
+        for (int i = mesh.is(u.getGridType(0)); i <= mesh.ie(u.getGridType(0)); ++i) {
             u(initTimeIdx, i, j) = 0;
         }
     }
-        // -------------------------------------------------------------------------
-        // meridional wind speed
-    for (int j = 0; j < mesh.getNumGrid(1, v.getGridType(1)); ++j) {
-        for (int i = 0; i < mesh.getNumGrid(0, v.getGridType(0)); ++i) {
+    // Set meridional wind speed.
+    for (int j = mesh.js(v.getGridType(1)); j <= mesh.je(v.getGridType(1)); ++j) {
+        for (int i = mesh.is(v.getGridType(0)); i <= mesh.ie(v.getGridType(0)); ++i) {
             v(initTimeIdx, i, j) = 0;
         }
     }
