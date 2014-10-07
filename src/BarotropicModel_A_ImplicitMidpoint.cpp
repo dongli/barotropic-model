@@ -13,17 +13,17 @@ BarotropicModel_A_ImplicitMidpoint::~BarotropicModel_A_ImplicitMidpoint() {
 void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
                                               int numLon, int numLat) {
     this->timeManager = &timeManager;
-    // initialize IO manager
+    // Initialize the IO manager.
     io.init(timeManager);
-    // initialize domain
+    // Initialize the domain.
     domain = new Domain(2);
     domain->setRadius(6.371e6);
-    // initialize mesh
+    // Initialize the mesh.
     mesh = new Mesh(*domain);
     mesh->init(numLon, numLat);
     dlon = mesh->getGridInterval(0, FULL, 0);
-    dlat = mesh->getGridInterval(1, FULL, 0); // assume equidistance grids
-    // create variables
+    dlat = mesh->getGridInterval(1, FULL, 0); // Assume the equidistance grids.
+    // Create the variables.
     u.create("u", "m s-1", "zonal wind speed", *mesh, CENTER, 2, HAS_HALF_LEVEL);
     v.create("v", "m s-1", "meridional wind speed", *mesh, CENTER, 2, HAS_HALF_LEVEL);
     gd.create("gd", "m2 s-2", "geopotential depth", *mesh, CENTER, 2, HAS_HALF_LEVEL);
@@ -38,7 +38,7 @@ void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
     gdv.create("gdv", "m2 s-1", "vt * gdt", *mesh, CENTER, 2);
     fu.create("fu", "* m s-1", "* * u", *mesh, CENTER, 2);
     fv.create("fv", "* m s-1", "* * v", *mesh, CENTER, 2);
-    // set coefficients
+    // Set some coefficients.
     // Note: Some coefficients containing cos(lat) will be specialized at Poles.
     cosLat.set_size(mesh->getNumGrid(1, FULL));
     for (int j = mesh->js(FULL)+1; j <= mesh->je(FULL)-1; ++j) {
@@ -68,7 +68,7 @@ void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
     for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
         factorLat[j] = 1/(2*dlat*domain->getRadius()*cosLat[j]);
     }
-    // set variables in Poles
+    // Set the variables on the Poles.
     for (int i = mesh->is(FULL)-1; i <= mesh->ie(FULL)+1; ++i) {
         dut(i, mesh->js(FULL)) = 0.0; dut(i, mesh->je(FULL)) = 0.0;
         dvt(i, mesh->js(FULL)) = 0.0; dvt(i, mesh->je(FULL)) = 0.0;
@@ -94,19 +94,17 @@ void BarotropicModel_A_ImplicitMidpoint::input(const string &fileName) {
 }
 
 void BarotropicModel_A_ImplicitMidpoint::run() {
-    // register output fields
+    // Register the output fields.
     StampString filePattern("output.%5s.nc");
     int fileIdx = io.registerOutputFile(*mesh, filePattern, TimeStepUnit::HOUR, 1);
     io.file(fileIdx).registerField("double", FULL_DIMENSION, {&u, &v, &gd});
     io.file(fileIdx).registerField("double", FULL_DIMENSION, {&ghs});
-    // -------------------------------------------------------------------------
-    // output initial condition
+    // Output the initial condition.
     io.create(fileIdx);
     io.output<double, 2>(fileIdx, oldTimeIdx, {&u, &v, &gd});
     io.output<double>(fileIdx, {&ghs});
     io.close(fileIdx);
-    // -------------------------------------------------------------------------
-    // main integration loop
+    // Start the main integration loop.
     while (!timeManager->isFinished()) {
         integrate(oldTimeIdx, timeManager->getStepSize());
         timeManager->advance();
@@ -120,30 +118,24 @@ void BarotropicModel_A_ImplicitMidpoint::run() {
 
 void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTimeIdx,
                                                    double dt) {
-    // -------------------------------------------------------------------------
-    // set time level indices
+    // Set time level indices.
     halfTimeIdx = oldTimeIdx+0.5;
     newTimeIdx = oldTimeIdx+1;
-    // -------------------------------------------------------------------------
-    // copy states
-    if (firstRun) {
-        for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
-            for (int i = mesh->is(FULL)-1; i <= mesh->ie(FULL)+1; ++i) {
-                u(halfTimeIdx, i, j) = u(oldTimeIdx, i, j);
-                v(halfTimeIdx, i, j) = v(oldTimeIdx, i, j);
-                gd(halfTimeIdx, i, j) = gd(oldTimeIdx, i, j);
-                gdt(oldTimeIdx, i, j) = sqrt(gd(oldTimeIdx, i, j));
-                gdt(halfTimeIdx, i, j) = gdt(oldTimeIdx, i, j);
-                ut(oldTimeIdx, i, j) = u(oldTimeIdx, i, j)*gdt(oldTimeIdx, i, j);
-                ut(halfTimeIdx, i, j) = ut(oldTimeIdx, i, j);
-                vt(oldTimeIdx, i, j) = v(oldTimeIdx, i, j)*gdt(oldTimeIdx, i, j);
-                vt(halfTimeIdx, i, j) = vt(oldTimeIdx, i, j);
-            }
+    // Copy the old variables to the new ones to start the iteration.
+    for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
+        for (int i = mesh->is(FULL)-1; i <= mesh->ie(FULL)+1; ++i) {
+            u(newTimeIdx, i, j) = u(oldTimeIdx, i, j);
+            v(newTimeIdx, i, j) = v(oldTimeIdx, i, j);
+            gd(newTimeIdx, i, j) = gd(oldTimeIdx, i, j);
+            gdt(oldTimeIdx, i, j) = sqrt(gd(oldTimeIdx, i, j));
+            gdt(newTimeIdx, i, j) = gdt(oldTimeIdx, i, j);
+            ut(oldTimeIdx, i, j) = u(oldTimeIdx, i, j)*gdt(oldTimeIdx, i, j);
+            ut(newTimeIdx, i, j) = ut(oldTimeIdx, i, j);
+            vt(oldTimeIdx, i, j) = v(oldTimeIdx, i, j)*gdt(oldTimeIdx, i, j);
+            vt(newTimeIdx, i, j) = vt(oldTimeIdx, i, j);
         }
-        firstRun = false;
     }
-    // -------------------------------------------------------------------------
-    // get old total energy and mass
+    // Get the old total energy and mass.
     double e0 = calcTotalEnergy(oldTimeIdx);
     double m0 = calcTotalMass(oldTimeIdx);
 #ifndef NDEBUG
@@ -153,12 +145,20 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
     cout << std::fixed << setw(20) << setprecision(2) << e0 << "  ";
     cout << "mass: ";
     cout << setw(20) << setprecision(2) << m0 << endl;
-    // -------------------------------------------------------------------------
-    // run iterations
-    int iter;
-    for (iter = 1; iter <= 8; ++iter) {
-        // ---------------------------------------------------------------------
-        // update geopotential height
+    // Run iterations.
+    for (int iter = 1; iter <= 8; ++iter) {
+        // Calculate the variables on the half time step.
+        for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
+            for (int i = mesh->is(FULL)-1; i <= mesh->ie(FULL)+1; ++i) {
+                u(halfTimeIdx, i, j) = (u(oldTimeIdx, i, j)+u(newTimeIdx, i, j))*0.5;
+                v(halfTimeIdx, i, j) = (v(oldTimeIdx, i, j)+v(newTimeIdx, i, j))*0.5;
+                gd(halfTimeIdx, i, j) = (gd(oldTimeIdx, i, j)+gd(newTimeIdx, i, j))*0.5;
+                ut(halfTimeIdx, i, j) = (ut(oldTimeIdx, i, j)+ut(newTimeIdx, i, j))*0.5;
+                vt(halfTimeIdx, i, j) = (vt(oldTimeIdx, i, j)+vt(newTimeIdx, i, j))*0.5;
+                gdt(halfTimeIdx, i, j) = (gdt(oldTimeIdx, i, j)+gdt(newTimeIdx, i, j))*0.5;
+            }
+        }
+        // Update the geopotential height.
         calcGeopotentialDepthTendency(halfTimeIdx);
         for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
             for (int i = mesh->is(FULL); i <= mesh->ie(FULL); ++i) {
@@ -166,16 +166,14 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
             }
         }
         gd.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
-        // ---------------------------------------------------------------------
-        // transform geopotential height
+        // Transform the geopotential height.
         for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
             for (int i = mesh->is(FULL); i <= mesh->ie(FULL); ++i) {
                 gdt(newTimeIdx, i, j) = sqrt(gd(newTimeIdx, i, j));
             }
         }
         gdt.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
-        // ---------------------------------------------------------------------
-        // update velocity
+        // Update the velocity.
         calcZonalWindTendency(halfTimeIdx);
         calcMeridionalWindTendency(halfTimeIdx);
         for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
@@ -186,8 +184,7 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
         }
         ut.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         vt.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
-        // ---------------------------------------------------------------------
-        // transform back velocity on half time level
+        // Transform back velocity on the new time level.
         for (int j = mesh->js(FULL); j <= mesh->je(FULL); ++j) {
             for (int i = mesh->is(FULL); i <= mesh->ie(FULL); ++i) {
                 u(newTimeIdx, i, j) = ut(newTimeIdx, i, j)/gdt(newTimeIdx, i, j);
@@ -196,7 +193,7 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
         }
         u.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
         v.applyBndCond(newTimeIdx, UPDATE_HALF_LEVEL);
-        // get new total energy and mass
+        // Get the new total energy and mass.
         double e1 = calcTotalEnergy(newTimeIdx);
         // TODO: Figure out how this early iteration abortion works.
         if (fabs(e1-e0)*2/(e1+e0) < 5.0e-15) {

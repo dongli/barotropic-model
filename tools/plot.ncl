@@ -6,10 +6,10 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/contrib/cd_string.ncl"
 begin
 
     start_time = 0
-    end_time = 3600
+    end_time = 43200
     time_step = 60
     file_prefix = "output"
-    file_root = "../build/Debug"
+    file_root = "../build"
     only_plot_gh = False
     plot_contour_line = True
     plot_wind_vector = True
