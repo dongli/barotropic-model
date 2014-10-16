@@ -5,19 +5,19 @@ namespace barotropic_model {
 void GeostrophicRelation::run(const SingleLevelField &ghs,
                               const TimeLevelIndex &timeIdx,
                               const Field &gd, Field &u, Field &v) {
-    const Mesh &mesh = static_cast<const Mesh&>(ghs.getMesh());
-    const Domain &domain = static_cast<const Domain&>(mesh.getDomain());
-    double Re = domain.getRadius();
-    int js = 0, jn = mesh.getNumGrid(1, FULL)-1;
+    const Mesh &mesh = static_cast<const Mesh&>(ghs.mesh());
+    const Domain &domain = static_cast<const Domain&>(mesh.domain());
+    double Re = domain.radius();
+    int js = 0, jn = mesh.numGrid(1, FULL)-1;
     // -------------------------------------------------------------------------
-    if (u.getStaggerLocation() == CENTER &&
-        v.getStaggerLocation() == CENTER) {
-        double dlon = mesh.getGridInterval(0, FULL, 0);
-        double dlat = mesh.getGridInterval(1, FULL, 1); // assume equidistant grids
+    if (u.staggerLocation() == CENTER &&
+        v.staggerLocation() == CENTER) {
+        double dlon = mesh.gridInterval(0, FULL, 0);
+        double dlat = mesh.gridInterval(1, FULL, 1); // assume equidistant grids
         // normal grids
         for (int j = mesh.js(FULL)+1; j <= mesh.je(FULL)-1; ++j) {
-            double cosLat = mesh.getCosLat(FULL, j);
-            double f = 2*OMEGA*mesh.getSinLat(FULL, j);
+            double cosLat = mesh.cosLat(FULL, j);
+            double f = 2*OMEGA*mesh.sinLat(FULL, j);
             for (int i = mesh.is(FULL); i <= mesh.ie(FULL); ++i) {
                 if (fabs(f) <= 1.0e-15) {
                     u(timeIdx, i, j) = 0;
@@ -39,8 +39,8 @@ void GeostrophicRelation::run(const SingleLevelField &ghs,
             v(timeIdx, i, js) = 0;
             v(timeIdx, i, jn) = 0;
         }
-    } else if (u.getStaggerLocation() == X_FACE &&
-               v.getStaggerLocation() == Y_FACE) {
+    } else if (u.staggerLocation() == X_FACE &&
+               v.staggerLocation() == Y_FACE) {
         REPORT_ERROR("Under construction!");
     }
     // -------------------------------------------------------------------------

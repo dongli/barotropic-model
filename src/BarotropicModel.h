@@ -29,8 +29,8 @@ namespace barotropic_model {
  */
 class BarotropicModel {
 protected:
-    Domain *domain;
-    Mesh *mesh;
+    Domain *_domain;
+    Mesh *_mesh;
     TimeManager *timeManager;
     IOManager io;
     Field u, v, gd;
@@ -51,17 +51,17 @@ public:
 
     virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt) = 0;
 
-    Domain& getDomain() const { return *domain; }
+    Domain& domain() const { return *_domain; }
 
-    Mesh& getMesh() const { return *mesh; }
+    Mesh& mesh() const { return *_mesh; }
 
-    Field& getZonalWind() { return u; }
+    Field& zonalWind() { return u; }
 
-    Field& getMeridionalWind() { return v; }
+    Field& meridionalWind() { return v; }
 
-    Field& getGeopotentialDepth() { return gd; }
+    Field& geopotentialDepth() { return gd; }
     
-    SingleLevelField& getSurfaceGeopotential() { return ghs; }
+    SingleLevelField& surfaceGeopotential() { return ghs; }
 };
 
 }
