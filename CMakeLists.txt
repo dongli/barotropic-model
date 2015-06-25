@@ -29,6 +29,7 @@ if (NOT use_as_submodule)
     # GEOMTK 
     add_subdirectory ("${PROJECT_SOURCE_DIR}/external/geomtk")
     include_directories (${GEOMTK_INCLUDE_DIRS})
+    link_directories (${GEOMTK_LIBRARY_DIRS})
 endif ()
 
 # Collect sources and headers.

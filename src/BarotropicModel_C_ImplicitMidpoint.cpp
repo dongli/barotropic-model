@@ -10,8 +10,8 @@ BarotropicModel_C_ImplicitMidpoint::~BarotropicModel_C_ImplicitMidpoint() {
     REPORT_OFFLINE;
 }
 
-void BarotropicModel_C_ImplicitMidpoint::init(TimeManager &timeManager,
-                                              int numLon, int numLat) {
+void BarotropicModel_C_ImplicitMidpoint::
+init(TimeManager &timeManager, int numLon, int numLat) {
     this->timeManager = &timeManager;
     // initialize IO manager
     io.init(timeManager);
@@ -34,12 +34,13 @@ void BarotropicModel_C_ImplicitMidpoint::init(TimeManager &timeManager,
     gdu.create("gdu", "m2 s-1", "ut * gdt", mesh(), X_FACE, 2);
     gdv.create("gdv", "m2 s-1", "vt * gdt", mesh(), Y_FACE, 2);
     // set coefficients
-}
+} // init
 
-void BarotropicModel_C_ImplicitMidpoint::run() {
+void BarotropicModel_C_ImplicitMidpoint::
+run() {
     StampString filePattern("output.%5d.nc");
-    int fileIdx = io.registerOutputFile(mesh(), filePattern, TimeStepUnit::DAY, 0.5);
-    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&u, &v, &gd});
+    int fileIdx = io.addOutputFile(mesh(), filePattern, hours(1));
+    io.file(fileIdx).addField("double", FULL_DIMENSION, {&u, &v, &gd});
     // -------------------------------------------------------------------------
     // output initial condition
     io.create(fileIdx);
@@ -48,7 +49,7 @@ void BarotropicModel_C_ImplicitMidpoint::run() {
     // -------------------------------------------------------------------------
     // main integration loop
     while (!timeManager->isFinished()) {
-        integrate(oldTimeIdx, timeManager->stepSize());
+        integrate(oldTimeIdx, timeManager->stepSizeInSeconds());
         timeManager->advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
@@ -57,14 +58,14 @@ void BarotropicModel_C_ImplicitMidpoint::run() {
     }
 }
 
-void BarotropicModel_C_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTimeIdx,
+void BarotropicModel_C_ImplicitMidpoint::integrate(const TimeLevelIndex<2> &oldTimeIdx,
                                                    double dt) {
     // set time level indices
     halfTimeIdx = oldTimeIdx+0.5;
     newTimeIdx = oldTimeIdx+1;
 }
 
-double BarotropicModel_C_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex &timeIdx) const {
+double BarotropicModel_C_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex<2> &timeIdx) const {
     double totalEnergy = 0;
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(HALF); i <= mesh().ie(HALF); ++i) {
@@ -84,7 +85,7 @@ double BarotropicModel_C_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex 
     return totalEnergy;
 }
 
-double BarotropicModel_C_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &timeIdx) const {
+double BarotropicModel_C_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex<2> &timeIdx) const {
     double totalMass = 0;
     for (int j = mesh().js(FULL); j <= mesh().je(FULL); ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {

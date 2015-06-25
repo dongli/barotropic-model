@@ -15,7 +15,7 @@ protected:
     vec factorLatFull;  //>! 1/2/dlat/R/cos(lat) on full meridional grids
     vec factorLatHalf;  //>! 1/2/dlat/R/cos(lat) on half meridional grids
     
-    TimeLevelIndex oldTimeIdx, halfTimeIdx, newTimeIdx;
+    TimeLevelIndex<2> oldTimeIdx, halfTimeIdx, newTimeIdx;
 public:
     BarotropicModel_C_ImplicitMidpoint();
     virtual ~BarotropicModel_C_ImplicitMidpoint();
@@ -26,11 +26,11 @@ public:
 
     virtual void run();
 
-    virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt);
+    virtual void integrate(const TimeLevelIndex<2> &oldTimeIdx, double dt);
 private:
-    double calcTotalEnergy(const TimeLevelIndex &timeIdx) const;
+    double calcTotalEnergy(const TimeLevelIndex<2> &timeIdx) const;
     
-    double calcTotalMass(const TimeLevelIndex &timeIdx) const;
+    double calcTotalMass(const TimeLevelIndex<2> &timeIdx) const;
 };
 
 }

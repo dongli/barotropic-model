@@ -2,9 +2,9 @@
 
 namespace barotropic_model {
 
-void GeostrophicRelation::run(const SingleLevelField &ghs,
-                              const TimeLevelIndex &timeIdx,
-                              const Field &gd, Field &u, Field &v) {
+void GeostrophicRelation::
+run(const Field<double> &ghs, const TimeLevelIndex<2> &timeIdx,
+    const Field<double, 2> &gd, Field<double, 2> &u, Field<double, 2> &v) {
     const Mesh &mesh = static_cast<const Mesh&>(ghs.mesh());
     const Domain &domain = static_cast<const Domain&>(mesh.domain());
     double Re = domain.radius();

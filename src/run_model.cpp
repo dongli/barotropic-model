@@ -8,9 +8,10 @@ int main(int argc, const char *argv[])
     RossbyHaurwitzTestCase testCase;
 
     TimeManager timeManager;
-    Time startTime, endTime(120*DAYS);
+    ptime startTime(date(2000, 1, 1));
+    ptime endTime = startTime+days(120);
 
-    timeManager.init(startTime, endTime, 4*MINUTES);
+    timeManager.init(startTime, endTime, minutes(4));
 
     model.init(timeManager, 80, 41);
     testCase.calcInitCond(model);

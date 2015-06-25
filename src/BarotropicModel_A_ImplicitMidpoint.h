@@ -13,7 +13,7 @@ namespace barotropic_model {
  */
 class BarotropicModel_A_ImplicitMidpoint : public BarotropicModel {
 protected:
-    SingleLevelField fu, fv;
+    Field<double> fu, fv;
 
     double dlon, dlat;
     vec cosLat, tanLat;
@@ -22,40 +22,45 @@ protected:
     vec factorLon;  //>! 1/2/dlon/R/cos(lat)
     vec factorLat;  //>! 1/2/dlat/R/cos(lat)
 
-    TimeLevelIndex oldTimeIdx, halfTimeIdx, newTimeIdx;
+    TimeLevelIndex<2> oldTimeIdx, halfTimeIdx, newTimeIdx;
 public:
     BarotropicModel_A_ImplicitMidpoint();
     virtual ~BarotropicModel_A_ImplicitMidpoint();
 
-    virtual void init(TimeManager &timeManager, int numLon, int numLat);
+    virtual void
+    init(TimeManager &timeManager, int numLon, int numLat);
 
-    virtual void input(const string &fileName);
+    virtual void
+    input(const string &fileName);
 
-    virtual void run();
+    virtual void
+    run();
 
-    virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt);
+    virtual void
+    integrate(const TimeLevelIndex<2> &oldTimeIdx, double dt);
 private:
-    double calcTotalEnergy(const TimeLevelIndex &timeIdx) const;
+    double
+    calcTotalEnergy(const TimeLevelIndex<2> &timeIdx) const;
 
-    double calcTotalMass(const TimeLevelIndex &timeIdx) const;
+    double calcTotalMass(const TimeLevelIndex<2> &timeIdx) const;
 
-    void calcGeopotentialDepthTendency(const TimeLevelIndex &timeIdx);
+    void calcGeopotentialDepthTendency(const TimeLevelIndex<2> &timeIdx);
 
-    void calcZonalWindTendency(const TimeLevelIndex &timeIdx);
+    void calcZonalWindTendency(const TimeLevelIndex<2> &timeIdx);
 
-    void calcMeridionalWindTendency(const TimeLevelIndex &timeIdx);
+    void calcMeridionalWindTendency(const TimeLevelIndex<2> &timeIdx);
 
-    void calcZonalWindAdvection(const TimeLevelIndex &timeIdx);
+    void calcZonalWindAdvection(const TimeLevelIndex<2> &timeIdx);
 
-    void calcMeridionalWindAdvection(const TimeLevelIndex &timeIdx);
+    void calcMeridionalWindAdvection(const TimeLevelIndex<2> &timeIdx);
 
-    void calcZonalWindCoriolis(const TimeLevelIndex &timeIdx);
+    void calcZonalWindCoriolis(const TimeLevelIndex<2> &timeIdx);
 
-    void calcMeridionalWindCoriolis(const TimeLevelIndex &timeIdx);
+    void calcMeridionalWindCoriolis(const TimeLevelIndex<2> &timeIdx);
 
-    void calcZonalWindPressureGradient(const TimeLevelIndex &timeIdx);
+    void calcZonalWindPressureGradient(const TimeLevelIndex<2> &timeIdx);
 
-    void calcMeridionalWindPressureGradient(const TimeLevelIndex &timeIdx);
+    void calcMeridionalWindPressureGradient(const TimeLevelIndex<2> &timeIdx);
 };
 
 }

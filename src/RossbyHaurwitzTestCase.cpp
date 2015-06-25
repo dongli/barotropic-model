@@ -21,16 +21,17 @@ RossbyHaurwitzTestCase::~RossbyHaurwitzTestCase() {
  *  h = gh0 + a²A(φ) + a²B(φ)cosRλ + a²C(φ)cos2Rλ
  *
  */
-void RossbyHaurwitzTestCase::calcInitCond(BarotropicModel &model) {
+void RossbyHaurwitzTestCase::
+calcInitCond(BarotropicModel &model) {
     if (dynamic_cast<const geomtk::SphereDomain*>(&model.domain()) == NULL) {
         REPORT_ERROR("Rossby-Haurwitz test case is only valid in sphere domain!");
     }
-    TimeLevelIndex initTimeIdx;
+    TimeLevelIndex<2> initTimeIdx;
     const Mesh &mesh = model.mesh();
-    Field &u = model.zonalWind();
-    Field &v = model.meridionalWind();
-    Field &gd = model.geopotentialDepth();
-    SingleLevelField &ghs = model.surfaceGeopotential();
+    Field<double, 2> &u = model.zonalWind();
+    Field<double, 2> &v = model.meridionalWind();
+    Field<double, 2> &gd = model.geopotentialDepth();
+    Field<double> &ghs = model.surfaceGeopotential();
     double Re = model.domain().radius();
     double R2 = R*R;
     double R_1 = R+1;

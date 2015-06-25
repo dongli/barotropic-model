@@ -23,10 +23,11 @@ namespace barotropic_model {
  */
 class GeostrophicRelation {
 public:
-    static void run(const SingleLevelField &ghs, const TimeLevelIndex &timeIdx,
-                    const Field &gd, Field &u, Field &v);
-};
+    static void
+    run(const Field<double> &ghs, const TimeLevelIndex<2> &timeIdx,
+        const Field<double, 2> &gd, Field<double, 2> &u, Field<double, 2> &v);
+}; // GeostrophicRelation
 
-}
+} // barotropic_model
 
 #endif // __GeostrophicRelation__

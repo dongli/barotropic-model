@@ -10,8 +10,8 @@ BarotropicModel_A_ImplicitMidpoint::~BarotropicModel_A_ImplicitMidpoint() {
     REPORT_OFFLINE;
 }
 
-void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
-                                              int numLon, int numLat) {
+void BarotropicModel_A_ImplicitMidpoint::
+init(TimeManager &timeManager, int numLon, int numLat) {
     this->timeManager = &timeManager;
     // Initialize the IO manager.
     io.init(timeManager);
@@ -75,12 +75,13 @@ void BarotropicModel_A_ImplicitMidpoint::init(TimeManager &timeManager,
         gdu(i, mesh().js(FULL)) = 0.0; gdu(i, mesh().je(FULL)) = 0.0;
         gdv(i, mesh().js(FULL)) = 0.0; gdv(i, mesh().je(FULL)) = 0.0;
     }
-}
+} // init
 
-void BarotropicModel_A_ImplicitMidpoint::input(const string &fileName) {
-    int fileIdx = io.registerInputFile(mesh(), fileName);
-    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&u, &v, &gd});
-    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&ghs});
+void BarotropicModel_A_ImplicitMidpoint::
+input(const string &fileName) {
+    int fileIdx = io.addInputFile(mesh(), fileName);
+    io.file(fileIdx).addField("double", FULL_DIMENSION, {&u, &v, &gd});
+    io.file(fileIdx).addField("double", FULL_DIMENSION, {&ghs});
     io.open(fileIdx);
     io.updateTime(fileIdx, *timeManager);
     io.input<double, 2>(fileIdx, oldTimeIdx, {&u, &v, &gd});
@@ -91,14 +92,15 @@ void BarotropicModel_A_ImplicitMidpoint::input(const string &fileName) {
     v.applyBndCond(oldTimeIdx);
     gd.applyBndCond(oldTimeIdx);
     ghs.applyBndCond();
-}
+} // input
 
-void BarotropicModel_A_ImplicitMidpoint::run() {
-    // Register the output fields.
+void BarotropicModel_A_ImplicitMidpoint::
+run() {
+    // Add the output fields.
     StampString filePattern("output.%5s.nc");
-    int fileIdx = io.registerOutputFile(mesh(), filePattern, TimeStepUnit::HOUR, 1);
-    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&u, &v, &gd});
-    io.file(fileIdx).registerField("double", FULL_DIMENSION, {&ghs});
+    int fileIdx = io.addOutputFile(mesh(), filePattern, hours(1));
+    io.file(fileIdx).addField("double", FULL_DIMENSION, {&u, &v, &gd});
+    io.file(fileIdx).addField("double", FULL_DIMENSION, {&ghs});
     // Output the initial condition.
     io.create(fileIdx);
     io.output<double, 2>(fileIdx, oldTimeIdx, {&u, &v, &gd});
@@ -106,7 +108,7 @@ void BarotropicModel_A_ImplicitMidpoint::run() {
     io.close(fileIdx);
     // Start the main integration loop.
     while (!timeManager->isFinished()) {
-        integrate(oldTimeIdx, timeManager->stepSize());
+        integrate(oldTimeIdx, timeManager->stepSizeInSeconds());
         timeManager->advance();
         oldTimeIdx.shift();
         io.create(fileIdx);
@@ -114,10 +116,10 @@ void BarotropicModel_A_ImplicitMidpoint::run() {
         io.output<double>(fileIdx, {&ghs});
         io.close(fileIdx);
     }
-}
+} // run
 
-void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTimeIdx,
-                                                   double dt) {
+void BarotropicModel_A_ImplicitMidpoint::
+integrate(const TimeLevelIndex<2> &oldTimeIdx, double dt) {
     // Set time level indices.
     halfTimeIdx = oldTimeIdx+0.5;
     newTimeIdx = oldTimeIdx+1;
@@ -210,9 +212,10 @@ void BarotropicModel_A_ImplicitMidpoint::integrate(const TimeLevelIndex &oldTime
         cout << setw(20) << setprecision(16) << fabs(e1-e0)*2/(e1+e0) << endl;
 #endif
     }
-}
+} // integrate
 
-double BarotropicModel_A_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex &timeIdx) const {
+double BarotropicModel_A_ImplicitMidpoint::
+calcTotalEnergy(const TimeLevelIndex<2> &timeIdx) const {
     double totalEnergy = 0.0;
     for (int j = mesh().js(FULL); j <= mesh().je(FULL); ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {
@@ -222,9 +225,10 @@ double BarotropicModel_A_ImplicitMidpoint::calcTotalEnergy(const TimeLevelIndex 
         }
     }
     return totalEnergy;
-}
+} // calcTotalEnergy
 
-double BarotropicModel_A_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &timeIdx) const {
+double BarotropicModel_A_ImplicitMidpoint::
+calcTotalMass(const TimeLevelIndex<2> &timeIdx) const {
     double totalMass = 0.0;
     for (int j = mesh().js(FULL); j <= mesh().je(FULL); ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {
@@ -232,14 +236,15 @@ double BarotropicModel_A_ImplicitMidpoint::calcTotalMass(const TimeLevelIndex &t
         }
     }
     return totalMass;
-}
+} // calcTotalMass
 
 /**
  *  Input: ut, vt, gdt
  *  Intermediate: gdu, gdv
  *  Output: dgd
  */
-void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialDepthTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcGeopotentialDepthTendency(const TimeLevelIndex<2> &timeIdx) {
     // calculate intermediate variables
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL)-1; i <= mesh().ie(FULL)+1; ++i) {
@@ -277,25 +282,28 @@ void BarotropicModel_A_ImplicitMidpoint::calcGeopotentialDepthTendency(const Tim
     }
     assert(fabs(tmp) < 1.0e-10);
 #endif
-}
+} // calcGeopotentialDepthTendency
 
-void BarotropicModel_A_ImplicitMidpoint::calcZonalWindTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcZonalWindTendency(const TimeLevelIndex<2> &timeIdx) {
     calcZonalWindAdvection(timeIdx);
     calcZonalWindCoriolis(timeIdx);
     calcZonalWindPressureGradient(timeIdx);
-}
+} // calcZonalWindTendency
 
-void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindTendency(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcMeridionalWindTendency(const TimeLevelIndex<2> &timeIdx) {
     calcMeridionalWindAdvection(timeIdx);
     calcMeridionalWindCoriolis(timeIdx);
     calcMeridionalWindPressureGradient(timeIdx);
-}
+} // calcMeridionalWindTendency
 
 /**
  *  Input: u, v, ut
  *  Output, s1
  */
-void BarotropicModel_A_ImplicitMidpoint::calcZonalWindAdvection(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcZonalWindAdvection(const TimeLevelIndex<2> &timeIdx) {
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL)-1; i <= mesh().ie(FULL)+1; ++i) {
             fu(i, j) = ut(timeIdx, i, j)*u(timeIdx, i, j);
@@ -312,13 +320,14 @@ void BarotropicModel_A_ImplicitMidpoint::calcZonalWindAdvection(const TimeLevelI
             dut(i, j) = 0.5*((dx1+dx2)*factorLon[j]+(dy1+dy2)*factorLat[j]);
         }
     }
-}
+} // calcZonalWindAdvection
 
 /**
  *  Input: u, v, vt
  *  Output, dvt
  */
-void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindAdvection(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcMeridionalWindAdvection(const TimeLevelIndex<2> &timeIdx) {
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL)-1; i <= mesh().ie(FULL)+1; ++i) {
             fu(i, j) = vt(timeIdx, i, j)*u(timeIdx, i, j);
@@ -335,39 +344,42 @@ void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindAdvection(const TimeL
             dvt(i, j) = 0.5*((dx1+dx2)*factorLon[j]+(dy1+dy2)*factorLat[j]);
         }
     }
-}
+} // calcMeridionalWindAdvection
 
 /**
  *  Input: u, vt
  *  Output: dut
  */
-void BarotropicModel_A_ImplicitMidpoint::calcZonalWindCoriolis(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcZonalWindCoriolis(const TimeLevelIndex<2> &timeIdx) {
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {
             double f = factorCor[j]+u(timeIdx, i, j)*factorCur[j];
             dut(i, j) -= f*vt(timeIdx, i, j);
         }
     }
-}
+} // calcZonalWindCoriolis
 
 /**
  *  Input: u, ut
  *  Output: dvt
  */
-void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindCoriolis(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcMeridionalWindCoriolis(const TimeLevelIndex<2> &timeIdx) {
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {
             double f = factorCor[j]+u(timeIdx, i, j)*factorCur[j];
             dvt(i, j) += f*ut(timeIdx, i, j);
         }
     }
-}
+} // calcMeridionalWindCoriolis
 
 /*
  *  Input: gd, ghs, gdt
  *  Output: dut
  */
-void BarotropicModel_A_ImplicitMidpoint::calcZonalWindPressureGradient(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcZonalWindPressureGradient(const TimeLevelIndex<2> &timeIdx) {
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {
             dut(i, j) += (gd(timeIdx, i+1, j)-gd(timeIdx, i-1, j)+
@@ -375,13 +387,14 @@ void BarotropicModel_A_ImplicitMidpoint::calcZonalWindPressureGradient(const Tim
                          factorLon[j]*gdt(timeIdx, i, j);
         }
     }
-}
+} // calcZonalWindPressureGradient
 
 /*
  *  Input: gd, ghs, gdt
  *  Output: dvt
  */
-void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindPressureGradient(const TimeLevelIndex &timeIdx) {
+void BarotropicModel_A_ImplicitMidpoint::
+calcMeridionalWindPressureGradient(const TimeLevelIndex<2> &timeIdx) {
     for (int j = mesh().js(FULL)+1; j <= mesh().je(FULL)-1; ++j) {
         for (int i = mesh().is(FULL); i <= mesh().ie(FULL); ++i) {
             dvt(i, j) += (gd(timeIdx, i, j+1)-gd(timeIdx, i, j-1)+
@@ -389,6 +402,6 @@ void BarotropicModel_A_ImplicitMidpoint::calcMeridionalWindPressureGradient(cons
                          factorLat[j]*cosLat[j]*gdt(timeIdx, i, j);
         }
     }
-}
+} // calcMeridionalWindPressureGradient
 
-}
+} // barotropic_model

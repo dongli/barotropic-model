@@ -24,13 +24,13 @@ void ToyTestCase::addPeak(const SpaceCoord &x, double amptitude, double radius) 
 }
 
 void ToyTestCase::calcInitCond(BarotropicModel &model) {
-    TimeLevelIndex initTimeIdx;
+    TimeLevelIndex<2> initTimeIdx;
     const Mesh &mesh = model.mesh();
     const Domain &domain = static_cast<const Domain&>(mesh.domain());
-    Field &u = model.zonalWind();
-    Field &v = model.meridionalWind();
-    Field &gd = model.geopotentialDepth();
-    SingleLevelField &ghs = model.surfaceGeopotential();
+    Field<double, 2> &u = model.zonalWind();
+    Field<double, 2> &v = model.meridionalWind();
+    Field<double, 2> &gd = model.geopotentialDepth();
+    Field<double> &ghs = model.surfaceGeopotential();
     // Set geopotential height peaks if they are not set yet.
     if (peaks.size() == 0) {
 //#define TOYTESTCASE_RANDOM_PEAKS
@@ -56,7 +56,7 @@ void ToyTestCase::calcInitCond(BarotropicModel &model) {
     }
     // Set surface geopotential height.
     SpaceCoord x(2);
-    x.setCoord(180*RAD, 45*RAD);
+    x.set(180*RAD, 45*RAD);
     double ghs0 = 1500*G;
     double topoRadius = domain.radius()/3;
     for (int j = mesh.js(FULL); j <= mesh.je(FULL); ++j) {

@@ -33,37 +33,59 @@ protected:
     Mesh *_mesh;
     TimeManager *timeManager;
     IOManager io;
-    Field u, v, gd;
-    SingleLevelField ghs;
-    SingleLevelField dut, dvt, dgd;
-    Field ut, vt, gdt;
-    SingleLevelField gdu, gdv;
+    Field<double, 2> u, v, gd;
+    Field<double> ghs;
+    Field<double> dut, dvt, dgd;
+    Field<double, 2> ut, vt, gdt;
+    Field<double> gdu, gdv;
     bool firstRun;
 public:
     BarotropicModel() { firstRun = true; }
     virtual ~BarotropicModel() {}
 
-    virtual void init(TimeManager &timeManager, int numLon, int numLat) = 0;
+    virtual void
+    init(TimeManager &timeManager, int numLon, int numLat) = 0;
 
-    virtual void input(const string &fileName) = 0;
+    virtual void
+    input(const string &fileName) = 0;
 
-    virtual void run() = 0;
+    virtual void
+    run() = 0;
 
-    virtual void integrate(const TimeLevelIndex &oldTimeIdx, double dt) = 0;
+    virtual void
+    integrate(const TimeLevelIndex<2> &oldTimeIdx, double dt) = 0;
 
-    Domain& domain() const { return *_domain; }
+    Domain&
+    domain() const {
+        return *_domain;
+    }
 
-    Mesh& mesh() const { return *_mesh; }
+    Mesh&
+    mesh() const {
+        return *_mesh;
+    }
 
-    Field& zonalWind() { return u; }
+    Field<double, 2>&
+    zonalWind() {
+        return u;
+    }
 
-    Field& meridionalWind() { return v; }
+    Field<double, 2>&
+    meridionalWind() {
+        return v;
+    }
 
-    Field& geopotentialDepth() { return gd; }
+    Field<double, 2>&
+    geopotentialDepth() {
+        return gd;
+    }
     
-    SingleLevelField& surfaceGeopotential() { return ghs; }
-};
+    Field<double>&
+    surfaceGeopotential() {
+        return ghs;
+    }
+}; // BarotropicModel
 
-}
+} // barotropic_model
 
-#endif
+#endif // __BarotropicModel__
